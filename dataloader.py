@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 import torchvision as tv
 from torch.utils.data import Dataset
+from PIL import Image
 
 
 def ensure_shape(im, size):
@@ -30,7 +31,7 @@ class Images(Dataset):
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        image_tensor = tv.io.read_image(filename).unsqueeze(0) / 255
+        image_tensor = tv.transforms.ToTensor()(Image.open(filename).convert("RGB")).unsqueeze(0)
         image_tensor = F.interpolate(
             image_tensor, scale_factor=self.size / min(image_tensor.shape[2:]), recompute_scale_factor=False
         )
@@ -70,7 +71,9 @@ class VideoFrames(Dataset):
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = torch.from_numpy(frame) / 255
                 frame = frame.permute(2, 0, 1).unsqueeze(0)
-                frame = F.interpolate(frame, scale_factor=size / min(frame.shape[2:]), recompute_scale_factor=False)
+                frame = F.interpolate(
+                    frame, scale_factor=self.size / min(frame.shape[2:]), recompute_scale_factor=False
+                )
                 frame = tv.transforms.CenterCrop(self.size)(frame)
                 frame = ensure_shape(frames, self.size)
                 frames.append(frame)

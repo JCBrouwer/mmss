@@ -2,3 +2,9 @@ cv2
 numpy
 torch
 tqdm
+ftfy
+regex
+tqdm
+git+https://github.com/openai/CLIP.git
+faiss
+bidict
