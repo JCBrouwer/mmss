@@ -11,5 +11,5 @@ class Model:
         pass
 
     @abstractmethod
-    def __call__(self, images):
+    def __call__(self, inputs):
         pass
