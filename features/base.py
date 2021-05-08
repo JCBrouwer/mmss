@@ -1,23 +1,20 @@
-from abc import abstractmethod
+import multiprocessing as mp
+import threading
+from abc import ABCMeta, abstractmethod
 from math import ceil
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
 import torch
-import torch.multiprocessing as mp
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-mp.set_sharing_strategy("file_system")
+# mp.set_sharing_strategy("file_system")
 
 
 def chunk(list, chunks):
     n = ceil(len(list) / chunks)
     return (list[i : i + n] for i in range(0, len(list), n))
-
-
-def transpose(list_of_lists):
-    return tuple(map(list, zip(*list_of_lists)))
 
 
 def worker_process_batch(batch):
@@ -26,7 +23,25 @@ def worker_process_batch(batch):
     return process_batch(batch)
 
 
-class Feature:
+class Feature(metaclass=ABCMeta):
+    """
+    Features must have:
+        - an process_batch function to take a batch of filenames and raw data and process it to a given embedding space
+        - a list of Model objects needed to calculate the final embeddings
+    """
+
+    @classmethod
+    def __subclasshook__(cls, subclass):
+        return (
+            hasattr(subclass, "process_batch")
+            and callable(subclass.initialize)
+            #
+            and hasattr(subclass, "models")
+            and isinstance(
+                subclass.models, List[Union[torch.nn.Module, torch.jit.ScriptModule, torch.jit.ScriptFunction]]
+            )
+        )
+
     def __init__(self, dataset, batch_size, num_workers):
         self.length = len(dataset)
         self.batch_size = batch_size
@@ -56,24 +71,38 @@ class Feature:
 
     def worker_init_fn(self):
         """Initialize models used for processing the feature on the correct device"""
-        rank = mp.current_process()._identity[0]
+        try:
+            rank = threading.get_ident()
+        except:
+            rank = mp.current_process()._identity[0]
         device = f"cuda:{rank % torch.cuda.device_count()}" if torch.cuda.is_available() else "cpu"
 
         for model in self.models:
+            if not isinstance(model.model, (torch.jit.ScriptModule, torch.jit.ScriptFunction)):
+                try:
+                    # try to convert model to TorchScript which avoids python's GIL for heavy computation
+                    model.model = torch.jit.script(model.model)
+                except:
+                    print(
+                        "WARNING: converting feature model to TorchScript failed, feature calculation might be slower..."
+                    )
+                    pass
             model.initialize(device)
 
-        # HACK need to get around multiprocessing pickling member functions leading to the main thread's Feature object
-        # being "self" rather than the worker's Feature object
+        # HACK to get around multiprocessing pickling member functions. This results in the main thread's Feature object
+        # being "self" rather than the worker's Feature object. Therefore we load the worker's process_batch function
+        # into global scope and execute it through the above helper function (worker_process_batch)
         global process_batch
         process_batch = self.process_batch
 
     def loader(self):
         """A generator that processes batches in parallel"""
-        with mp.Pool(self.num_workers, initializer=self.worker_init_fn) as pool:
+        with mp.pool.ThreadPool(self.num_workers, initializer=self.worker_init_fn) as pool:
             for batch in self.input_generator:
                 for fns, embds in pool.imap_unordered(
                     worker_process_batch, chunk(batch, self.batch_size / self.num_workers)
                 ):
+                    print(fns)
                     yield fns, embds
 
     def process(self):
@@ -87,26 +116,6 @@ class Feature:
         return np.array(filenames), np.concatenate(embeddings)
 
     @abstractmethod
-    def process_batch(self, batch) -> Tuple[List[str], List[np.array]]:
+    def process_batch(self, batch: List[Tuple[str, np.ndarray]]) -> Tuple[List[str], List[np.ndarray]]:
         """Processes a batch of input data into the feature"""
-        return transpose(batch)
-
-
-if __name__ == "__main__":
-    from glob import glob
-    from dataloader import Images
-
-    files = glob("/home/hans/datasets/cyphept/cypherpunk/*.jpg")
-
-    feature = Feature(Images(files), batch_size=64, num_workers=8)
-    filenames, embeddings = feature.process()
-    print(embeddings.shape)
-
-    feature = Feature(Images(files), batch_size=64, num_workers=8)
-    filenames, embeddings = [], []
-    for fns, embds in feature.loader():
-        filenames += fns
-        embeddings += embds
-    print(np.concatenate(embeddings).shape)
-
-    print("all done")
+        raise NotImplementedError

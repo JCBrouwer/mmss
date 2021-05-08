@@ -6,7 +6,6 @@ import faiss
 import joblib
 import numpy as np
 from bidict import bidict
-from tqdm import tqdm
 
 
 class Database:
@@ -32,7 +31,7 @@ class Database:
 
         print(f"Loading database with {len(self.id_file_map)} rows and {len(self.indices.keys())} columns")
 
-    def index(self, filenames, feature, column_name=None, index_type="IDMap,Flat", train_after=False):
+    def index(self, filenames, feature, column_name=None, index_type="IDMap,Flat"):
         """Add new files to index"""
         t = time()
         if column_name is None:
@@ -44,7 +43,7 @@ class Database:
         index = self.indices[column_name]
 
         files, features = feature.process()
-        # for files, features in tqdm(feature.loader(), smoothing=0):
+
         if not index.is_trained:
             index.train(index, features)
 
@@ -56,11 +55,7 @@ class Database:
             self.next_id += 1
         ids = np.array(ids)
 
-        print(features.shape, ids.shape, files.shape)
-        index.add_with_ids(features.astype(np.float32), ids)
-
-        if train_after:
-            self.train_representative(self.indices[column_name])
+        index.add_with_ids(feature.astype(np.float32), ids)
 
         faiss.write_index(index, f"{self.directory}/{column_name}.index")
         joblib.dump(self.id_file_map, self.map_file, compress=9)

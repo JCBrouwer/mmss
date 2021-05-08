@@ -1,18 +1,23 @@
-import sys
 from glob import glob
-
+import features.registry
 import torch
-
 from database import Database
-from features.clip import ClipFeature
-from dataloader import Images
+from .arguments import parse_insert_args
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method("spawn")
+    torch.set_grad_enabled(False)
 
-    db = Database("cache/db")
+    args = parse_insert_args()
 
-    directory = sys.argv[1]
-    files = glob(directory + "/*.jpeg") + glob(directory + "/*.jpg") + glob(directory + "/*.png")
+    db = Database(args.db_dir)
 
-    db.index(files, ClipFeature(Images(files), batch_size=64, num_workers=4))
+    files = glob(args.img_dir + "/*.jpeg") + glob(args.img_dir + "/*.jpg") + glob(args.img_dir + "/*.png")
+
+    for feature in features.registry.retrieve(args.features):
+        print(f"Processing {feature.name}...")
+        db.index(
+            filenames=files,
+            feature=feature.insert_fn(files, args.batch_size, args.num_workers),
+            column_name=feature.name,
+        )

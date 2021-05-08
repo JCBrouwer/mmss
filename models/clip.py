@@ -1,9 +1,10 @@
 from typing import List, Union
-from PIL.Image import Image
+
 import torch
 import torch.nn.functional as F
-from torch.tensor import Tensor
 import torchvision as tv
+from PIL.Image import Image
+from torch.tensor import Tensor
 
 import clip
 from clip.simple_tokenizer import SimpleTokenizer
@@ -21,15 +22,18 @@ class Clip(Model):
         self.tokenizer = SimpleTokenizer()
         self.sot_token = self.tokenizer.encoder["<|startoftext|>"]
         self.eot_token = self.tokenizer.encoder["<|endoftext|>"]
+        self.normalize = tv.transforms.Normalize(
+            (0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)
+        )
+
+        self.output_size = 512
 
     def initialize(self, device):
         self.device = device
         self.model, _ = clip.load(self.backbone, device=device)
 
     def preprocess(self, tens):
-        tens = F.interpolate(tens, size=CLIP_N_PIX, align_corners=False, mode="bilinear")
-        tens = tv.transforms.Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711))(tens)
-        return tens
+        return self.normalize(F.interpolate(tens, size=CLIP_N_PIX, align_corners=False, mode="bilinear"))
 
     def tokenize(self, texts, context_length=77):
         if isinstance(texts, str):
@@ -44,18 +48,16 @@ class Clip(Model):
         return result
 
     def __call__(self, inputs: List[Union[Image, str, Tensor]]):
-        with torch.no_grad():
-            if not isinstance(inputs, list):
-                inputs = [inputs]
-            outputs = []
-            for img_or_text in inputs:
-                if isinstance(img_or_text, str):
-                    text = self.tokenize(img_or_text).to(self.device)
-                    outputs.append(self.model.encode_text(text))
-                else:
-                    if isinstance(img_or_text, Image):
-                        img_or_text = tv.transforms.ToTensor()(img_or_text)
-                    img = self.preprocess(img_or_text)
-                    outputs.append(self.model.encode_image(img))
+        if not isinstance(inputs, list):
+            inputs = [inputs]
+        outputs = []
+        for img_or_text in inputs:
+            if isinstance(img_or_text, str):
+                text = self.tokenize(img_or_text).to(self.device)
+                outputs.append(self.model.encode_text(text))
+            else:
+                if isinstance(img_or_text, Image):
+                    img_or_text = tv.transforms.ToTensor()(img_or_text)
+                img = self.preprocess(img_or_text)
+                outputs.append(self.model.encode_image(img))
         return torch.cat(outputs).cpu()
-
