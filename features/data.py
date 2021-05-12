@@ -1,3 +1,5 @@
+from math import ceil
+
 import cv2
 import numpy as np
 import torch
@@ -15,7 +17,7 @@ def ensure_shape(im, size):
         im = torch.cat([im] * 3, axis=1)
     if im.shape[1] == 4:
         im = im[:, :3]
-    assert list(im.shape[1:]) == [3, size, size]
+    # assert list(im.shape[1:]) == [3, size, size]
     return im
 
 
@@ -29,15 +31,12 @@ class Images(Dataset):
 
     def __getitem__(self, idx):
         filename = self.filenames[idx]
-        image_tensor = tv.transforms.ToTensor()(Image.open(filename).convert("RGB")).unsqueeze(0)
+        image_tensor = tv.transforms.functional.to_tensor(Image.open(filename).convert("RGB")).unsqueeze(0)
         image_tensor = F.interpolate(
             image_tensor, scale_factor=self.size / min(image_tensor.shape[2:]), recompute_scale_factor=False
         )
-        image_tensor = tv.transforms.CenterCrop(self.size)(image_tensor)
+        image_tensor = tv.transforms.functional.center_crop(image_tensor, self.size)
         return filename, ensure_shape(image_tensor, self.size)
-
-    def collate_fn(self, batch):
-        return batch
 
 
 class VideoFrames(Dataset):
@@ -80,6 +79,3 @@ class VideoFrames(Dataset):
         except Exception as e:
             print("\n\nERROR: Processing", filename, "failed!\n", e, "\n")
             return filename, None
-
-    def collate_fn(self, batch):
-        return [(fns, ims) for fns, ims in batch if ims is not None]

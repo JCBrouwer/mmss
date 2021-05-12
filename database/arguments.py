@@ -15,8 +15,8 @@ def init_parser():
 def parse_insert_args():
     parser = init_parser()
     parser.add_argument("img_dir", type=str, help="Directory with images to insert to the database")
-    parser.add_argument("--batch_size", type=int, default=64, help="Size of batches to process features in")
-    parser.add_argument("--num_workers", type=int, default=4, help="Number of feature processing threads to use")
+    parser.add_argument("--batch_size", type=int, default=8, help="Size of batches to process features in")
+    parser.add_argument("--num_workers", type=int, default=2, help="Number of feature processing threads to use")
     return parser.parse_args()
 
 

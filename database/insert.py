@@ -1,12 +1,17 @@
 from glob import glob
+
 import features.registry
 import torch
+
 from database import Database
+
 from .arguments import parse_insert_args
+
+torch.set_grad_enabled(False)
+torch.backends.cudnn.benchmark = True
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method("spawn")
-    torch.set_grad_enabled(False)
 
     args = parse_insert_args()
 

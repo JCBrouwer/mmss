@@ -6,9 +6,11 @@ from PIL import Image
 from database import Database
 from database.arguments import parse_search_args
 
+torch.set_grad_enabled(False)
+torch.backends.cudnn.benchmark = True
+
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method("spawn")
-    torch.set_grad_enabled(False)
 
     args = parse_search_args()
 

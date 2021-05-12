@@ -55,7 +55,7 @@ class Database:
             self.next_id += 1
         ids = np.array(ids)
 
-        index.add_with_ids(feature.astype(np.float32), ids)
+        index.add_with_ids(features.astype(np.float32), ids)
 
         faiss.write_index(index, f"{self.directory}/{column_name}.index")
         joblib.dump(self.id_file_map, self.map_file, compress=9)
@@ -91,5 +91,4 @@ class Database:
                     if id not in results:
                         results[id] = []
                     results[id].append(dist)
-        print(results)
         return list(set([self.id_file_map[k] for k, _ in sorted(results.items(), key=lambda res: reduce(res[1]))]))[:k]

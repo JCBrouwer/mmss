@@ -1,4 +1,6 @@
-from features.base import Feature
+import torch
+
+from features.feature import Feature
 
 
 class ModelFeature(Feature):
@@ -12,7 +14,7 @@ class ModelFeature(Feature):
         filenames, embeddings = [], []
         for filename, image in batch:
             filenames.append(filename)
-            embeddings.append(self.model(image))
+            embeddings.append(self.model(image).cpu())
         return filenames, embeddings
 
 
@@ -33,7 +35,7 @@ class ModelPipelineFeature(Feature):
 
             output = image
             for model in self.models:
-                output = model(transpose(output))
+                output = model(output)
 
-            embeddings.append(output)
+            embeddings.append(output.cpu())
         return filenames, embeddings

@@ -1,3 +1,4 @@
+import threading
 from typing import List, Union
 
 import torch
@@ -8,8 +9,7 @@ from torch.tensor import Tensor
 
 import clip
 from clip.simple_tokenizer import SimpleTokenizer
-
-from .base import Model
+from models.model import Model
 
 CLIP_N_PIX = 224
 
@@ -31,6 +31,7 @@ class Clip(Model):
     def initialize(self, device):
         self.device = device
         self.model, _ = clip.load(self.backbone, device=device)
+        self.model = self.model.to(device)
 
     def preprocess(self, tens):
         return self.normalize(F.interpolate(tens, size=CLIP_N_PIX, align_corners=False, mode="bilinear"))
@@ -56,8 +57,7 @@ class Clip(Model):
                 text = self.tokenize(img_or_text).to(self.device)
                 outputs.append(self.model.encode_text(text))
             else:
-                if isinstance(img_or_text, Image):
-                    img_or_text = tv.transforms.ToTensor()(img_or_text)
-                img = self.preprocess(img_or_text)
+                img = tv.transforms.functional.to_tensor(img_or_text) if isinstance(img_or_text, Image) else img_or_text
+                img = self.preprocess(img)
                 outputs.append(self.model.encode_image(img))
-        return torch.cat(outputs).cpu()
+        return torch.cat(outputs).detach().cpu()

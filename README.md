@@ -27,6 +27,7 @@ python -m database.search
 
 ```
 cache/              # intermediate values and database files should be stored here
+    modelzoo/       # pretrained model checkpoints etc.
 
 database/
     db.py           # Main database implementation. Keeps track of different features in
@@ -37,7 +38,7 @@ database/
     search.py       # Script to search the database based on text queries
 
 models/
-    base.py         # The base Model interface. This class encapsulates a specific model
+    model.py        # The base Model interface. This class encapsulates a specific model
                     # or algorithm that transforms a single raw input data point into
                     # its corresponding embedding. Handles loading of model weights and
                     # model-specific preprocessing of raw data
@@ -47,7 +48,7 @@ models/
 features/
     data.py         # torch.Dataset implementations to load in raw images and videos
 
-    base.py         # The base Feature interface. This handles iterating over the data
+    feature.py      # The base Feature interface. This handles iterating over the data
                     # to transform it to the specified embedding space. Distributes work
                     # using multiprocessing / multi-GPU where applicable
 

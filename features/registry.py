@@ -5,7 +5,7 @@ import numpy as np
 import torch
 from models import Artemis, Clip
 
-from features.base import Feature
+from features.feature import Feature
 from features.data import Images
 from features.primitives import ModelFeature, ModelPipelineFeature
 

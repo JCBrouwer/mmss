@@ -1,0 +1,6 @@
+*
+!.gitignore
+!modelzoo
+!modelzoo/.gitignore
+!modelzoo/artemis
+!modelzoo/artemis/vocabulary.pkl
