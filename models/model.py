@@ -1,9 +1,10 @@
 from abc import ABCMeta, abstractmethod, ABC
-from typing import Union
+from typing import Union, List
 from numpy import ndarray
 
 import torch
 from PIL import Image
+from tensorflow import Tensor
 
 
 class Model(metaclass=ABCMeta):
@@ -49,7 +50,7 @@ class SearchableModel(Model, metaclass=ABCMeta):
     """
 
     @abstractmethod
-    def search(self, query: Union[str, Image, ndarray]):
+    def search(self, query: List[Union[Image, str, Tensor]]):
         """
         Function to search this model for the specific query
         :param query: the query to be sought for, abstractly this can be any of the types defined in the Union
