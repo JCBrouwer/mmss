@@ -13,24 +13,24 @@ class RegistryEntry:
 
     name: str
     insert_fn: Callable[[List[str], int, int, SearchableModel], Feature]
-    end_search: SearchableModel
+    search_model: SearchableModel
 
 
 REGISTRY = {
     "clip": RegistryEntry(
         name="clip-image-embedding",
         insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-        end_search=Clip()
+        search_model=Clip()
     ),
     "artemis": RegistryEntry(
         name="artemis-caption-clip-text-embedding",
         insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([Artemis(), em], Images(f), batch_size=bs, num_workers=nw),
-        end_search=Clip()
+        search_model=Clip()
     ),
     "histogram": RegistryEntry(
         name="histogram-image-search",
         insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-        end_search=Histogram()
+        search_model=Histogram()
     )
 }
 
