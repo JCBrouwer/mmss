@@ -1,8 +1,8 @@
-import features.registry
 import matplotlib.pyplot as plt
 import torch
 from PIL import Image
 
+import features.registry
 from database import Database
 from database.arguments import parse_search_args
 
@@ -20,8 +20,14 @@ if __name__ == "__main__":
 
     k = args.num_results
 
-    # TODO how do we deal with cases where the features don't have the same search_fn??
-    results = db.search(queries=feats[0].search_fn, columns=[feat.name for feat in feats], k=k)
+    search_functions = {}
+    for feat in feats:
+        if not type(feat.end_search) in search_functions:
+            search_functions[type(feat.end_search)] = feat.end_search.search
+
+    results = []
+    for search_fn in search_functions.values():
+        results.append(db.search(queries=search_fn, columns=[feat.name for feat in feats], k=k))
 
     if args.filenames_only:
         for file in results:
