@@ -13,7 +13,7 @@ _If you are working from a Linux distro and have a CUDA capable GPU with [CUDA T
 you can go directly to [step 3](#3-installing-via-requirementstxt) and everything should work_
 
 
-###1. Installing CLIP and its dependencies
+### 1. Installing CLIP and its dependencies
 
 Since [CLIP](https://github.com/openai/CLIP) can cause some awkward dependency issues, installing this first seems to be the way to go without running 
 into issues later on.
@@ -26,7 +26,7 @@ pip install git+https://github.com/openai/CLIP.git
 This installation assumes you have a CUDA capable device, replace the `cudatoolkit` version with the one installed on your device.
 If your device does not have a GPU with CUDA capabilities, you can replace `cudatoolkit` with `cpuonly`.
 
-###2. Installing faiss
+### 2. Installing faiss
 The next step should be installing [faiss](https://github.com/facebookresearch/faiss/blob/master). They have gpu and cpu variations
 of the package however the gpu variation is only available on Linux systems so if you are not installing from a Linux system
 then you have to install the cpu variation. Below are the three commands to execute depending on your system and specificity.
@@ -46,7 +46,7 @@ conda install -c pytorch faiss-gpu
 conda install -c pytorch faiss-gpu cudatoolkit=10.0
 ```
 
-###3. Installing via requirements.txt
+### 3. Installing via requirements.txt
 Once these steps have been completed you should be able to install any of the missing packages directly. It is also
 possible that you can do this without the first two steps given the right conditions, as explained in the installation overview.
 
