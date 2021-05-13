@@ -23,6 +23,6 @@ if __name__ == "__main__":
         print(f"Processing {feature.name}...")
         db.index(
             filenames=files,
-            feature=feature.insert_fn(files, args.batch_size, args.num_workers, feature.end_search),
+            feature=feature.insert_fn(files, args.batch_size, args.num_workers, feature.search_model),
             column_name=feature.name,
         )
