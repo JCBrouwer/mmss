@@ -1,11 +1,13 @@
 bidict
-faiss
+faiss-cpu
+faiss-gpu
 ftfy
-git+https://github.com/openai/CLIP.git
-git+https://github.com/optas/artemis.git
 mypy
 numpy
+OpenCV-Python
 regex
 torch==1.7.1
 tqdm
-pyarrow
+
+-e CLIP
+-e artemis

@@ -1,0 +1,6 @@
+[submodule "artemis"]
+	path = artemis
+	url = https://github.com/optas/artemis.git
+[submodule "CLIP"]
+	path = CLIP
+	url = https://github.com/openai/CLIP.git
