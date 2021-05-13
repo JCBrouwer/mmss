@@ -2,19 +2,17 @@
 
 ## Installation
 
-First clone the repository (and its submodules):
+To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version=3.8.
+
+Clone the repository (and its submodules) and install the dependencies with the commands below.
+
 ```bash
 git clone --recursive https://gitlab.ewi.tudelft.nl/cs4065/2020-2021/team23/multi-media-similarity-search.git
 conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
+pip install -r requirements.txt
 ```
 
-The modules specified in requirements.txt do not always come together nicely, because the specifics of the requirements depend on the operating system you are using and your physical device configuration (whether or not you have a GPU that has CUDA compatible).
-
-To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version=3.8.
-
-From within the conda environment `pip install -r requirements.txt` should install all the required dependencies.
-
-If you run into errors with the dependencies see the [Troubleshooting section](#troubleshooting) below.
+The modules specified in requirements.txt do not always come together nicely, because the specifics of the requirements depend on the operating system you are using and your physical device configuration (whether or not you have a GPU that has CUDA compatible). If you run into errors with the dependencies see the [Troubleshooting section](#troubleshooting) below.
 
 ## Usage
 
