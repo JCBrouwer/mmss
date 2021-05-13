@@ -5,6 +5,7 @@
 First clone the repository (and its submodules):
 ```bash
 git clone --recursive https://gitlab.ewi.tudelft.nl/cs4065/2020-2021/team23/multi-media-similarity-search.git
+conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
 ```
 
 The modules specified in requirements.txt do not always come together nicely, because the specifics of the requirements depend on the operating system you are using and your physical device configuration (whether or not you have a GPU that has CUDA compatible).
