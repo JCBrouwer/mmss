@@ -79,7 +79,7 @@ class Database:
     def train_representative(self, index, num_samples=1000):
         index.train(self.random_sample(index, num_samples, verbose=False))
 
-    def search(self, queries, columns, k=5, reduce=np.mean):
+    def search(self, queries, columns, k=25, reduce=np.mean):
         """Search for queries in columns"""
         if not isinstance(queries, list):
             queries = [queries]
@@ -91,4 +91,9 @@ class Database:
                     if id not in results:
                         results[id] = []
                     results[id].append(dist)
-        return list(set([self.id_file_map[k] for k, _ in sorted(results.items(), key=lambda res: reduce(res[1]))]))[:k]
+        best_results = sorted(results.items(), key=lambda res: reduce(res[1]))[:k]
+        filenames, distances = [], []
+        for id, dist in best_results:
+            filenames.append(self.id_file_map[id])
+            distances.append(dist)
+        return filenames, distances

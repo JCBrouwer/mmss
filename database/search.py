@@ -11,6 +11,9 @@ from PIL import Image
 from database import Database
 from database.arguments import parse_search_args
 
+torch.set_grad_enabled(False)
+torch.backends.cudnn.benchmark = True
+
 
 @dataclass
 class SearchColumns:
@@ -18,56 +21,65 @@ class SearchColumns:
     column_names: List[str]
 
 
-CachedDB = namedtuple("CachedDB", ("dir", "db"))
-DB = CachedDB("", None)
+# cache the database and search models so we don't have to reload when searching multiple times
+CachedValue = namedtuple("CachedValue", ("key", "val"))
+DB = CachedValue("", None)
+SEARCH_DATA = CachedValue("", None)
 
 
 def search(db_dir, columns, num_results, query):
     global DB
-    if DB.dir != db_dir:
-        DB = CachedDB(db_dir, Database(db_dir))  # avoid reloading database when searching multiple times
+    if DB.key != db_dir:
+        DB = CachedValue(db_dir, Database(db_dir))
 
-    feats = features.registry.retrieve(columns)
+    global SEARCH_DATA
+    if SEARCH_DATA.key != columns:
+        feats = features.registry.retrieve(columns)
 
-    # find the search model used for each feature
-    search_fn_data_map = {}
-    for feat in feats:
-        if not type(feat.search_model) in search_fn_data_map:
-            feat.search_model.initialize("cpu")
-            search_fn_data_map[type(feat.search_model)] = SearchColumns(feat.search_model.search, [feat.name])
-        else:
-            search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
+        # find the search model used for each feature
+        search_fn_data_map = {}
+        for feat in feats:
+            if not type(feat.search_model) in search_fn_data_map:
+                try:
+                    rank = torch.multiprocessing.current_process()._identity[0]
+                except:
+                    rank = 0
+                device = f"cuda:{rank % torch.cuda.device_count()}" if torch.cuda.is_available() else "cpu"
+                feat.search_model.initialize(device)
+                search_fn_data_map[type(feat.search_model)] = SearchColumns(feat.search_model.search, [feat.name])
+            else:
+                search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
+        SEARCH_DATA = CachedValue(columns, search_fn_data_map)
 
     # if no query supplied, solicit text input from user
     if query is None:
         query = input("Query: ")
 
     # get results from each search model
-    results = []
-    for search_data in search_fn_data_map.values():
+    filenames = []
+    for search_data in SEARCH_DATA.val.values():
         query_embeddings = search_data.search_fn(query)
-        results.append(DB.db.search(queries=query_embeddings, columns=search_data.column_names, k=num_results))
+        fns, _ = DB.val.search(queries=query_embeddings, columns=search_data.column_names, k=num_results)
+        filenames.append(fns)
 
     # populate front of list with results that are found in multiple columns, ordered by number of occurences
-    counter = Counter(list(itertools.chain.from_iterable(results)))
-    final_results = [filename for filename, count in counter.most_common(num_results) if count > 1]
+    counter = Counter(itertools.chain.from_iterable(filenames))
+    results = [filename for filename, count in counter.most_common(num_results) if count > 1]
 
     # after that, interleave results from the front of each column (as long as its not already in the list)
     i = 0
-    while len(final_results) < num_results:
-        filename = results[i % len(results)][i // len(results)]
-        if filename not in final_results:
-            final_results.append(filename)
+    n = len(filenames)
+    while len(results) < num_results:
+        filename = filenames[i % n][i // n]
+        if filename not in results:
+            results.append(filename)
         i += 1
 
-    return final_results
+    return results
 
 
 if __name__ == "__main__":
-    torch.set_grad_enabled(False)
-    torch.backends.cudnn.benchmark = True
     torch.multiprocessing.set_start_method("spawn")
-
     args = parse_search_args()
 
     filenames_only = args.filenames_only
