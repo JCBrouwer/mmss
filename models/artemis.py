@@ -12,7 +12,12 @@ import torch.nn.functional as F
 import torchvision as tv
 from PIL.Image import Image
 
-from artemis.in_out.neural_net_oriented import load_saved_speaker, torch_load_model
+from artemis.emotions import ARTEMIS_EMOTIONS
+from artemis.in_out.neural_net_oriented import load_saved_speaker
+from artemis.neural_models.image_emotion_clf import ImageEmotionClassifier
+from artemis.neural_models.mlp import MLP
+from artemis.neural_models.resnet_encoder import ResnetEncoder
+
 from models.model import Model
 
 speaker_saved_args = "cache/modelzoo/artemis/config.json.txt"
@@ -27,9 +32,9 @@ class ArtemisSubModule(torch.nn.Module):
         self.caption = caption.to(device)
 
         self.emotion = emotion
-        for name, mod in self.emotion.img_encoder.named_modules():
-            if isinstance(mod, torch.nn.Conv2d):
-                mod._reversed_padding_repeated_twice = [*mod.padding, *mod.padding]
+        # for name, mod in self.emotion.img_encoder.named_modules():
+        #     if isinstance(mod, torch.nn.Conv2d):
+        #         mod._reversed_padding_repeated_twice = [*mod.padding, *mod.padding]
         self.emotion = self.emotion.to(device)
 
         self.device = device
@@ -201,6 +206,18 @@ class Artemis(Model):
         caption_model.eval()
 
         emotion_classifier = torch.load(img2emo_checkpoint, map_location="cpu")
+        # torch.save(emotion_classifier.state_dict(), img2emo_checkpoint.replace(".pt", ".state_dict"))
+
+        # img_encoder = ResnetEncoder("resnet34", adapt_image_size=1)
+        # clf_head = MLP(
+        #     img_encoder.embedding_dimension(),
+        #     [100, len(ARTEMIS_EMOTIONS)],
+        #     b_norm=True,
+        #     dropout_rate=0.3,
+        #     closure=torch.nn.LogSoftmax(dim=-1),
+        # )
+        # emotion_classifier = ImageEmotionClassifier(img_encoder, clf_head).eval()
+        # emotion_classifier.load_state_dict(torch.load(img2emo_checkpoint.replace(".pt", ".state_dict")))
 
         self.device = device
         self.model = ArtemisSubModule(caption_model, emotion_classifier, device)
