@@ -15,7 +15,6 @@ CLIP_N_PIX = 224
 
 
 class Clip(SearchableModel):
-
     def __init__(self, backbone="ViT-B/32"):
         self.backbone = backbone
         self.model = None

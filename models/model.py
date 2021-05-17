@@ -1,10 +1,9 @@
-from abc import ABCMeta, abstractmethod, ABC
-from typing import Union, List
-from numpy import ndarray
+from abc import ABCMeta, abstractmethod
+from typing import List, Union
 
 import torch
-from PIL import Image
-from tensorflow import Tensor
+from PIL.Image import Image
+from torch import Tensor
 
 
 class Model(metaclass=ABCMeta):
@@ -20,17 +19,17 @@ class Model(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
         return (
-                hasattr(subclass, "initialize")
-                and callable(subclass.initialize)
-                #
-                and hasattr(subclass, "__call__")
-                and callable(subclass.__call__)
-                #
-                and hasattr(subclass, "model")
-                and isinstance(subclass.model, (torch.nn.Module, torch.jit.ScriptModule, torch.jit.ScriptFunction))
-                #
-                and hasattr(subclass, "output_size")
-                and isinstance(subclass.output_size, int)
+            hasattr(subclass, "initialize")
+            and callable(subclass.initialize)
+            #
+            and hasattr(subclass, "__call__")
+            and callable(subclass.__call__)
+            #
+            and hasattr(subclass, "model")
+            and isinstance(subclass.model, (torch.nn.Module, torch.jit.ScriptModule, torch.jit.ScriptFunction))
+            #
+            and hasattr(subclass, "output_size")
+            and isinstance(subclass.output_size, int)
         )
 
     @abstractmethod

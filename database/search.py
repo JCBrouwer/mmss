@@ -33,13 +33,15 @@ if __name__ == "__main__":
     search_fn_data_map = {}
     for feat in feats:
         if not type(feat.search_model) in search_fn_data_map:
+            feat.search_model.initialize("cpu")
             search_fn_data_map[type(feat.search_model)] = SearchColumns(feat.search_model.search, [feat.name])
         else:
             search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
 
     results = []
     for search_data in search_fn_data_map.values():
-        results.append(db.search(queries=search_data.search_fn, columns=search_data.column_names, k=k))
+        queries = search_data.search_fn(input("Query: "))
+        results.append(db.search(queries=queries, columns=search_data.column_names, k=k))
 
     if args.filenames_only:
         for file in results:

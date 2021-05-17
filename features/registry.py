@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
+from models import Artemis, Clip, SearchableModel
+
 from features.data import Images
 from features.feature import Feature
 from features.primitives import ModelFeature, ModelPipelineFeature
-from models import Artemis, Clip, SearchableModel
-from models.hist import Histogram
+
+# from models.hist import Histogram
 
 
 @dataclass
@@ -20,18 +22,18 @@ REGISTRY = {
     "clip": RegistryEntry(
         name="clip-image-embedding",
         insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-        search_model=Clip()
+        search_model=Clip(),
     ),
     "artemis": RegistryEntry(
         name="artemis-caption-clip-text-embedding",
         insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([Artemis(), em], Images(f), batch_size=bs, num_workers=nw),
-        search_model=Clip()
+        search_model=Clip(),
     ),
-    "histogram": RegistryEntry(
-        name="histogram-image-search",
-        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-        search_model=Histogram()
-    )
+    # "histogram": RegistryEntry(
+    #     name="color-histogram",
+    #     insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+    #     search_model=Histogram(),
+    # ),
 }
 
 
