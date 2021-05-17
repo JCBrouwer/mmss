@@ -16,10 +16,7 @@ class Model(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass):
         return (
-            hasattr(subclass, "__init__")
-            and callable(subclass.__init__)
-            #
-            and hasattr(subclass, "initialize")
+            hasattr(subclass, "initialize")
             and callable(subclass.initialize)
             #
             and hasattr(subclass, "__call__")
@@ -31,10 +28,6 @@ class Model(metaclass=ABCMeta):
             and hasattr(subclass, "output_size")
             and isinstance(subclass.output_size, int)
         )
-
-    @abstractmethod
-    def __init__(self):
-        raise NotImplementedError
 
     @abstractmethod
     def initialize(self, device):
