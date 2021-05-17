@@ -62,7 +62,11 @@ class Clip(SearchableModel):
                 text = self.tokenize(img_or_text).to(self.device)
                 outputs.append(self.model.encode_text(text))
             else:
-                img = tv.transforms.functional.to_tensor(img_or_text) if isinstance(img_or_text, Image) else img_or_text
+                img = (
+                    tv.transforms.functional.to_tensor(img_or_text).unsqueeze(0)
+                    if isinstance(img_or_text, Image)
+                    else img_or_text
+                )
                 img = self.preprocess(img)
                 outputs.append(self.model.encode_image(img))
         return torch.cat(outputs).detach().cpu()

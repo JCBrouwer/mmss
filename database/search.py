@@ -1,20 +1,35 @@
+import itertools
+from collections import Counter, namedtuple
 from dataclasses import dataclass
 from typing import Callable, List
 
+import features.registry
 import matplotlib.pyplot as plt
 import torch
 from PIL import Image
 
-import features.registry
 from database import Database
 from database.arguments import parse_search_args
 
 
+@dataclass
+class SearchColumns:
+    search_fn: Callable
+    column_names: List[str]
+
+
+CachedDB = namedtuple("CachedDB", ("dir", "db"))
+DB = CachedDB("", None)
+
+
 def search(db_dir, columns, num_results, query):
-    db = Database(db_dir)
+    global DB
+    if DB.dir != db_dir:
+        DB = CachedDB(db_dir, Database(db_dir))  # avoid reloading database when searching multiple times
 
     feats = features.registry.retrieve(columns)
 
+    # find the search model used for each feature
     search_fn_data_map = {}
     for feat in feats:
         if not type(feat.search_model) in search_fn_data_map:
@@ -23,21 +38,29 @@ def search(db_dir, columns, num_results, query):
         else:
             search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
 
+    # if no query supplied, solicit text input from user
     if query is None:
         query = input("Query: ")
 
+    # get results from each search model
     results = []
     for search_data in search_fn_data_map.values():
         query_embeddings = search_data.search_fn(query)
-        results.extend(db.search(queries=query_embeddings, columns=search_data.column_names, k=num_results))
+        results.append(DB.db.search(queries=query_embeddings, columns=search_data.column_names, k=num_results))
 
-    return results
+    # populate front of list with results that are found in multiple columns, ordered by number of occurences
+    counter = Counter(list(itertools.chain.from_iterable(results)))
+    final_results = [filename for filename, count in counter.most_common(num_results) if count > 1]
 
+    # after that, interleave results from the front of each column (as long as its not already in the list)
+    i = 0
+    while len(final_results) < num_results:
+        filename = results[i % len(results)][i // len(results)]
+        if filename not in final_results:
+            final_results.append(filename)
+        i += 1
 
-@dataclass
-class SearchColumns:
-    search_fn: Callable
-    column_names: List[str]
+    return final_results
 
 
 if __name__ == "__main__":
