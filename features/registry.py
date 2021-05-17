@@ -1,39 +1,39 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-import numpy as np
-import torch
-from models import Artemis, Clip
+from models import Artemis, Clip, SearchableModel
 
-from features.feature import Feature
 from features.data import Images
+from features.feature import Feature
 from features.primitives import ModelFeature, ModelPipelineFeature
+
+# from models.hist import Histogram
 
 
 @dataclass
 class RegistryEntry:
+
     name: str
-    insert_fn: Callable[[List[str], int, int], Feature]
-    search_fn: Callable[[], np.ndarray]
-
-
-def clip_search():
-    clip = Clip()
-    clip.initialize(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
-    return np.array(clip(input("Text query: ")), dtype=np.float32)
+    insert_fn: Callable[[List[str], int, int, SearchableModel], Feature]
+    search_model: SearchableModel
 
 
 REGISTRY = {
     "clip": RegistryEntry(
         name="clip-image-embedding",
-        insert_fn=lambda f, bs, nw: ModelFeature(Clip(), Images(f), batch_size=bs, num_workers=nw),
-        search_fn=clip_search,
+        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+        search_model=Clip(),
     ),
     "artemis": RegistryEntry(
         name="artemis-caption-clip-text-embedding",
-        insert_fn=lambda f, bs, nw: ModelPipelineFeature([Artemis(), Clip()], Images(f), batch_size=bs, num_workers=nw),
-        search_fn=clip_search,
+        insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([Artemis(), em], Images(f), batch_size=bs, num_workers=nw),
+        search_model=Clip(),
     ),
+    # "histogram": RegistryEntry(
+    #     name="color-histogram",
+    #     insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+    #     search_model=Histogram(),
+    # ),
 }
 
 

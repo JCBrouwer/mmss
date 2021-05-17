@@ -1,19 +1,43 @@
-import features.registry
+from dataclasses import dataclass
+from typing import Callable, List
+
 import matplotlib.pyplot as plt
 import torch
 from PIL import Image
 
+import features.registry
 from database import Database
 from database.arguments import parse_search_args
 
 
-def search(db_dir, columns, num_results):
+def search(db_dir, columns, num_results, query):
     db = Database(db_dir)
 
     feats = features.registry.retrieve(columns)
 
-    # TODO how do we deal with cases where the features don't have the same search_fn??
-    return db.search(queries=feats[0].search_fn, columns=[feat.name for feat in feats], k=num_results)
+    search_fn_data_map = {}
+    for feat in feats:
+        if not type(feat.search_model) in search_fn_data_map:
+            feat.search_model.initialize("cpu")
+            search_fn_data_map[type(feat.search_model)] = SearchColumns(feat.search_model.search, [feat.name])
+        else:
+            search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
+
+    if query is None:
+        query = input("Query: ")
+
+    results = []
+    for search_data in search_fn_data_map.values():
+        query_embeddings = search_data.search_fn(query)
+        results.extend(db.search(queries=query_embeddings, columns=search_data.column_names, k=num_results))
+
+    return results
+
+
+@dataclass
+class SearchColumns:
+    search_fn: Callable
+    column_names: List[str]
 
 
 if __name__ == "__main__":
@@ -26,7 +50,7 @@ if __name__ == "__main__":
     filenames_only = args.filenames_only
     del args.filenames_only
 
-    results = search(**vars(args))
+    results = search(**vars(args), query=None)
 
     if filenames_only:
         for file in results:
