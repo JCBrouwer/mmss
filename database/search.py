@@ -1,13 +1,23 @@
-import features.registry
+from dataclasses import dataclass
+from typing import Callable, List
+
 import matplotlib.pyplot as plt
 import torch
 from PIL import Image
 
+import features.registry
 from database import Database
 from database.arguments import parse_search_args
 
 torch.set_grad_enabled(False)
 torch.backends.cudnn.benchmark = True
+
+
+@dataclass
+class SearchColumns:
+    search_fn: Callable
+    column_names: List[str]
+
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method("spawn")
@@ -20,8 +30,18 @@ if __name__ == "__main__":
 
     k = args.num_results
 
-    # TODO how do we deal with cases where the features don't have the same search_fn??
-    results = db.search(queries=feats[0].search_fn, columns=[feat.name for feat in feats], k=k)
+    search_fn_data_map = {}
+    for feat in feats:
+        if not type(feat.search_model) in search_fn_data_map:
+            feat.search_model.initialize("cpu")
+            search_fn_data_map[type(feat.search_model)] = SearchColumns(feat.search_model.search, [feat.name])
+        else:
+            search_fn_data_map[type(feat.search_model)].column_names.append(feat.name)
+
+    results = []
+    for search_data in search_fn_data_map.values():
+        queries = search_data.search_fn(input("Query: "))
+        results.append(db.search(queries=queries, columns=search_data.column_names, k=k))
 
     if args.filenames_only:
         for file in results:

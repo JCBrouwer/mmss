@@ -1,6 +1,9 @@
 from abc import ABCMeta, abstractmethod
+from typing import List, Union
 
 import torch
+from PIL.Image import Image
+from torch import Tensor
 
 
 class Model(metaclass=ABCMeta):
@@ -35,4 +38,21 @@ class Model(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(self, inputs):
+        raise NotImplementedError
+
+
+class SearchableModel(Model, metaclass=ABCMeta):
+    """
+    Searchable model type. Not all models have to be searchable hence the abstraction rather than adding an optional
+    override to the base class Model. Any Model that can be searched in using any of the query types specified
+    in the search descriptor should instead have this as their superclass.
+    """
+
+    @abstractmethod
+    def search(self, query: List[Union[Image, str, Tensor]]):
+        """
+        Function to search this model for the specific query
+        :param query: the query to be sought for, abstractly this can be any of the types defined in the Union
+            but restrictions can be set by type hinting the implementation
+        """
         raise NotImplementedError
