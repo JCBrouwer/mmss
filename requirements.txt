@@ -4,7 +4,7 @@ faiss-gpu
 ftfy
 mypy
 numpy
-OpenCV-Python
+opencv-python
 regex
 torch==1.7.1
 tqdm
