@@ -7,7 +7,7 @@ def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--db_dir", type=str, default="cache/db", help="Directory to save database indices")
     parser.add_argument(
-        "--features", nargs="+", default=["clip"], choices=["all", *REGISTRY.keys()], help="Features to process"
+        "--columns", nargs="+", default=["clip"], choices=["all", *REGISTRY.keys()], help="Features to process"
     )
     return parser
 
