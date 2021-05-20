@@ -1,13 +1,11 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from models import Artemis, Clip, SearchableModel
+from models import Artemis, Clip, SearchableModel, Sift  # , Histogram
 
 from features.data import Images
 from features.feature import Feature
 from features.primitives import ModelFeature, ModelPipelineFeature
-
-# from models.hist import Histogram
 
 
 @dataclass
@@ -34,6 +32,11 @@ REGISTRY = {
     #     insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
     #     search_model=Histogram(),
     # ),
+    "sift": RegistryEntry(
+        name="sift",
+        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+        search_model=Sift(),
+    ),
 }
 
 

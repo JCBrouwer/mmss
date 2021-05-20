@@ -39,6 +39,7 @@ class Images(Dataset):
         return filename, ensure_shape(image_tensor, self.size)
 
 
+# TODO use `decord` for this instead, should be much faster
 class VideoFrames(Dataset):
     def __init__(self, filenames, size=300, num_frames=8):
         self.filenames = filenames

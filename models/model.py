@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Union
 
+import numpy as np
 import torch
 from PIL.Image import Image
 from torch import Tensor
@@ -37,7 +38,7 @@ class Model(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def __call__(self, inputs):
+    def __call__(self, inputs) -> List[np.ndarray]:
         raise NotImplementedError
 
 

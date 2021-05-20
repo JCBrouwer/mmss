@@ -127,7 +127,7 @@ class Feature(metaclass=ABCMeta):
                 filenames += fns
                 embeddings += embds
                 progress.update(len(fns))
-        return np.array(filenames), np.concatenate(embeddings)
+        return np.array(filenames), embeddings
 
     @abstractmethod
     def process_batch(self, batch: List[Tuple[str, np.ndarray]]) -> Tuple[List[str], List[np.ndarray]]:

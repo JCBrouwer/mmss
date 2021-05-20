@@ -59,7 +59,7 @@ def search(db_dir, columns, num_results, query):
     filenames = []
     for search_data in SEARCH_DATA.val.values():
         query_embeddings = search_data.search_fn(query)
-        fns, _ = DB.val.search(queries=query_embeddings, columns=search_data.column_names, k=num_results)
+        fns, dists = DB.val.search(queries=query_embeddings, columns=search_data.column_names, k=num_results)
         filenames.append(fns)
 
     # populate front of list with results that are found in multiple columns, ordered by number of occurences
@@ -69,8 +69,16 @@ def search(db_dir, columns, num_results, query):
     # after that, interleave results from the front of each column (as long as its not already in the list)
     i = 0
     n = len(filenames)
+    retries = 0
     while len(results) < num_results:
-        filename = filenames[i % n][i // n]
+        try:
+            filename = filenames[i % n][i // n]
+            retries = 0
+        except IndexError:
+            retries += 1
+            if retries == 10:
+                break
+            continue
         if filename not in results:
             results.append(filename)
         i += 1

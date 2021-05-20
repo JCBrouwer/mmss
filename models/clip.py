@@ -51,7 +51,7 @@ class Clip(SearchableModel):
         return result
 
     def search(self, query: List[Union[Image, str, Tensor]]):
-        return np.array(self(query), dtype=np.float32)
+        return np.concatenate(self(query)).astype(np.float32)
 
     def __call__(self, inputs: List[Union[Image, str, Tensor]]):
         if not isinstance(inputs, list):
@@ -68,5 +68,5 @@ class Clip(SearchableModel):
                     else img_or_text
                 )
                 img = self.preprocess(img)
-                outputs.append(self.model.encode_image(img))
-        return torch.cat(outputs).detach().cpu()
+                outputs.append(self.model.encode_image(img).detach().cpu().numpy())
+        return outputs

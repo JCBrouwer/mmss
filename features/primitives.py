@@ -14,7 +14,7 @@ class ModelFeature(Feature):
         filenames, embeddings = [], []
         for filename, image in batch:
             filenames.append(filename)
-            embeddings.append(self.model(image).cpu())
+            embeddings += self.model(image)
         return filenames, embeddings
 
 
@@ -37,5 +37,5 @@ class ModelPipelineFeature(Feature):
             for model in self.models:
                 output = model(output)
 
-            embeddings.append(output.cpu())
+            embeddings += output
         return filenames, embeddings

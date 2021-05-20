@@ -6,6 +6,7 @@ import faiss
 import joblib
 import numpy as np
 from bidict import bidict
+from collections import Counter
 
 
 class Database:
@@ -31,22 +32,34 @@ class Database:
 
         print(f"Loading database with {len(self.id_file_map)} rows and {len(self.indices.keys())} columns")
 
-    def index(self, filenames, feature, column_name=None, index_type="IDMap,Flat"):
+    def index(self, feature, column_name=None, index_type="IDMap,Flat"):
         """Add new files to index"""
         t = time()
         if column_name is None:
             column_name = feature.__class__.__name__
 
+        # check if index for this feature already exists, otherwise create it
         size = feature.size
         if not column_name in self.indices:
             self.indices[column_name] = faiss.index_factory(size, index_type)
         index = self.indices[column_name]
 
+        # process the feature
         files, features = feature.process()
 
+        # if feature doesn't return single vectors (e.g. SIFT), flatten to longer list of single vectors
+        if len(features[0].shape) > 1:
+            expanded_files = []
+            for file, feat in zip(files, features):
+                expanded_files += [file] * len(feat)
+            files = np.array(expanded_files)
+            features = np.concatenate(features, axis=0)
+
+        # if index needs training, train
         if not index.is_trained:
             index.train(index, features)
 
+        # get ids for each file, some might already be present in our id_file_map
         ids = []
         for file in files:
             id = self.id_file_map.inverse.get(file, self.next_id)
@@ -55,15 +68,15 @@ class Database:
             self.next_id += 1
         ids = np.array(ids)
 
+        # insert to the index and write everything to disk
         index.add_with_ids(features.astype(np.float32), ids)
-
         faiss.write_index(index, f"{self.directory}/{column_name}.index")
         joblib.dump(self.id_file_map, self.map_file, compress=9)
 
-        print(f"Finished adding {len(filenames)} files to column {column_name}")
+        print(f"Finished adding {len(files)} files to column {column_name}")
         print(f"Took {time() - t} seconds")
 
-    def random_sample(self, index, num_samples=1000, verbose=True):
+    def random_sample(self, index, num_samples, verbose=True):
         sample_ids = np.random.permutation(index.ntotal)[:num_samples]
 
         sample = []
@@ -76,7 +89,7 @@ class Database:
 
         return sample
 
-    def train_representative(self, index, num_samples=1000):
+    def train_representative(self, index, num_samples=10_000):
         index.train(self.random_sample(index, num_samples, verbose=False))
 
     def search(self, queries, columns, k=25, reduce=np.mean):
@@ -86,8 +99,8 @@ class Database:
         results = {}
         for query in queries:
             for column_name in columns:
-                colres = self.indices[column_name].search(query, k=2 * k)
-                for dist, id in zip(colres[0].squeeze(), colres[1].squeeze()):
+                distances, ids = self.indices[column_name].search(query, k=2 * k)
+                for dist, id in zip(distances.flatten(), ids.flatten()):
                     if id not in results:
                         results[id] = []
                     results[id].append(dist)
@@ -95,5 +108,5 @@ class Database:
         filenames, distances = [], []
         for id, dist in best_results:
             filenames.append(self.id_file_map[id])
-            distances.append(dist)
+            distances.append(reduce(dist))
         return filenames, distances

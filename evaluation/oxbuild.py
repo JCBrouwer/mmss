@@ -64,11 +64,12 @@ if __name__ == "__main__":
         extract_tgz(f"{annot_dir}.tgz", f"{annot_dir}/")
         os.remove(f"{annot_dir}.tgz")
 
-    columns = ["clip"]
-    db_dir = "cache/oxbuild.db"
+    columns = ["sift", "clip"]
+    db_dir = f"cache/oxbuild.db"
 
-    if not os.path.exists(db_dir):
-        database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns)
+    indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in columns)
+    if not indices_exist:
+        database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=8)
 
     aps = []
     for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):
