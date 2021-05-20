@@ -7,22 +7,23 @@ from database import Database
 
 from .arguments import parse_insert_args
 
-torch.set_grad_enabled(False)
-torch.backends.cudnn.benchmark = True
 
-if __name__ == "__main__":
-    torch.multiprocessing.set_start_method("spawn")
+def insert(db_dir, img_dir, columns, batch_size=8, num_workers=2):
+    db = Database(db_dir)
 
-    args = parse_insert_args()
+    files = glob(img_dir + "/*.jpeg") + glob(img_dir + "/*.jpg") + glob(img_dir + "/*.png")
 
-    db = Database(args.db_dir)
-
-    files = glob(args.img_dir + "/*.jpeg") + glob(args.img_dir + "/*.jpg") + glob(args.img_dir + "/*.png")
-
-    for feature in features.registry.retrieve(args.features):
+    for feature in features.registry.retrieve(columns):
         print(f"Processing {feature.name}...")
         db.index(
             filenames=files,
-            feature=feature.insert_fn(files, args.batch_size, args.num_workers, feature.search_model),
+            feature=feature.insert_fn(files, batch_size, num_workers, feature.search_model),
             column_name=feature.name,
         )
+
+
+if __name__ == "__main__":
+    torch.set_grad_enabled(False)
+    torch.backends.cudnn.benchmark = True
+    torch.multiprocessing.set_start_method("spawn")
+    insert(**vars(parse_insert_args()))
