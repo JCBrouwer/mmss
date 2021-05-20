@@ -89,10 +89,7 @@ class Feature(metaclass=ABCMeta):
     def worker_init_fn(self):
         """Initialize models used for processing the feature on the correct device"""
         self = deepcopy(self)
-        try:
-            rank = threading.get_native_id()
-        except:
-            rank = mp.current_process()._identity[0]
+        rank = threading.get_native_id()
         device = f"cuda:{rank % torch.cuda.device_count()}" if torch.cuda.is_available() else "cpu"
 
         for i, model in enumerate(self.models):

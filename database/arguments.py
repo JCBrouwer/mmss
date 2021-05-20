@@ -7,7 +7,7 @@ def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--db_dir", type=str, default="cache/db", help="Directory to save database indices")
     parser.add_argument(
-        "--features", nargs="+", default=["clip"], choices=["all", *REGISTRY.keys()], help="Features to process"
+        "--columns", nargs="+", default=["clip"], choices=["all", *REGISTRY.keys()], help="Features to process"
     )
     return parser
 
@@ -23,5 +23,5 @@ def parse_insert_args():
 def parse_search_args():
     parser = init_parser()
     parser.add_argument("--num_results", type=int, default=8, help="Number of results to return")
-    parser.add_argument("--filenames", action="store_true", help="Only output filenames of results, do not show images")
+    parser.add_argument("--filenames_only", action="store_true", help="Only output filenames of results, do not show images")
     return parser.parse_args()

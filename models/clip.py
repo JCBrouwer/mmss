@@ -1,23 +1,24 @@
-import threading
 from typing import List, Union
 
+import clip
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision as tv
 from PIL.Image import Image
+from clip.simple_tokenizer import SimpleTokenizer
 from torch.tensor import Tensor
 
-import clip
-from clip.simple_tokenizer import SimpleTokenizer
-from models.model import Model
+from models.model import SearchableModel
 
 CLIP_N_PIX = 224
 
 
-class Clip(Model):
+class Clip(SearchableModel):
     def __init__(self, backbone="ViT-B/32"):
         self.backbone = backbone
         self.model = None
+        self.device = None
 
         self.tokenizer = SimpleTokenizer()
         self.sot_token = self.tokenizer.encoder["<|startoftext|>"]
@@ -27,6 +28,7 @@ class Clip(Model):
         )
 
         self.output_size = 512
+        super(Clip, self).__init__()
 
     def initialize(self, device):
         self.device = device
@@ -48,6 +50,9 @@ class Clip(Model):
             result[i, :n_tokens] = torch.tensor(tokens)[:n_tokens]
         return result
 
+    def search(self, query: List[Union[Image, str, Tensor]]):
+        return np.array(self(query), dtype=np.float32)
+
     def __call__(self, inputs: List[Union[Image, str, Tensor]]):
         if not isinstance(inputs, list):
             inputs = [inputs]
@@ -57,7 +62,11 @@ class Clip(Model):
                 text = self.tokenize(img_or_text).to(self.device)
                 outputs.append(self.model.encode_text(text))
             else:
-                img = tv.transforms.functional.to_tensor(img_or_text) if isinstance(img_or_text, Image) else img_or_text
+                img = (
+                    tv.transforms.functional.to_tensor(img_or_text).unsqueeze(0)
+                    if isinstance(img_or_text, Image)
+                    else img_or_text
+                )
                 img = self.preprocess(img)
                 outputs.append(self.model.encode_image(img))
         return torch.cat(outputs).detach().cpu()
