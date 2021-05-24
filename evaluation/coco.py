@@ -12,7 +12,7 @@ from util import download
 img_dir = "cache/coco/val2014/"
 db_dir = "cache/coco.db"
 columns = ["clip"]
-n_workers = 16
+n_workers = mp.cpu_count()
 
 if not os.path.exists("cache/coco/dataset_coco.json"):
     path, _ = download("https://cs.stanford.edu/people/karpathy/deepimagesent/caption_datasets.zip")

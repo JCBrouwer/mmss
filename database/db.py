@@ -104,7 +104,10 @@ class Database:
                     if id not in results:
                         results[id] = []
                     results[id].append(dist)
-        best_results = sorted(results.items(), key=lambda res: reduce(res[1]))[:k]
+
+        # sort results by number of occurrences of file_id, break ties by distance (-length to sort descending)
+        best_results = sorted(results.items(), key=lambda id_dists: (-len(id_dists[1]), reduce(id_dists[1])))[:k]
+
         filenames, distances = [], []
         for id, dist in best_results:
             filenames.append(self.id_file_map[id])
