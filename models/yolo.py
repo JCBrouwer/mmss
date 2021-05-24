@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List, Union
 from PIL.Image import Image
 from torch.tensor import Tensor
@@ -5,12 +6,16 @@ import torch
 from models.model import Model
 
 
-class Yolo(Model):
-    def __init__(self, n_keypoints=150):
+class YoloClasses(Model):
+    def __init__(self, ):
         self.model = None
-        self.n_keypoints = n_keypoints
-        self.output_size = self.n_keypoints * 128
         self.device = None
+
+        # Max number of classes per image that we should identify
+        self.output_size = 10
+
+        # Min confidence for class detection
+        self.min_confidence = 0.6
 
     def initialize(self, device):
         self.device = device
@@ -20,12 +25,28 @@ class Yolo(Model):
         if not isinstance(inputs, list):
             inputs = [inputs]
         results = self.model(inputs)
-        return results
+        # If this fails then yolov5s might not return result for some inputs and call needs adjustment for batching
+        assert len(results) == len(inputs)
 
-# results.xyxy[0]  # img1 predictions (tensor)
-# results.pandas().xyxy[0]  # img1 predictions (pandas)
-#      xmin    ymin    xmax   ymax  confidence  class    name
-# 0  749.50   43.50  1148.0  704.5    0.874023      0  person
-# 1  433.50  433.50   517.5  714.5    0.687988     27     tie
-# 2  114.75  195.75  1095.0  708.0    0.624512      0  person
-# 3  986.00  304.00  1028.0  420.0    0.286865     27     tie
+        outputs = [[] for _ in range(len(inputs))]
+        names = results.names
+
+        # Allow for batch results distributed per image
+        for i, (im, pred) in enumerate(zip(results.imgs, results.pred)):
+            # If there even is any pred
+            if pred is not None:
+                # Default dict such that there are no key errors/checks required
+                name_dict_img = defaultdict(float)
+                # Pred consists of box params and ends with conf, cls so *_ ignored (still tensors)
+                for *_, conf, cls in pred:
+                    c_name = names[int(cls)]
+                    # Check if the confidence is high enough
+                    if float(conf) > self.min_confidence:
+                        # Add to total confidence for this label
+                        name_dict_img[c_name] += float(conf)
+                sorted_res = [pair[0] for pair in sorted(name_dict_img.items(), key=lambda item: item[1], reverse=True)]
+                if len(sorted_res) > self.output_size:
+                    sorted_res = sorted_res[:self.output_size]
+                outputs[i] = sorted_res
+
+        return outputs
