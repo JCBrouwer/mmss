@@ -64,23 +64,34 @@ if __name__ == "__main__":
         extract_tgz(f"{annot_dir}.tgz", f"{annot_dir}/")
         os.remove(f"{annot_dir}.tgz")
 
-    columns = ["sift", "clip"]
     db_dir = f"cache/oxbuild.db"
 
-    indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in columns)
-    if not indices_exist:
-        database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=8)
+    for column_set in [
+        ["clip"],
+        ["sift"],
+        ["orb"],
+        ["brisk"],
+        ["clip", "sift"],
+        ["clip", "orb"],
+        ["clip", "brisk"],
+        ["sift", "orb", "brisk"],
+        ["clip", "sift", "orb", "brisk"],
+    ]:
+        print(column_set)
+        indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in column_set)
+        if not indices_exist:
+            database.insert(db_dir=db_dir, img_dir=img_dir, columns=column_set, num_workers=8)
 
-    aps = []
-    for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):
-        with open(query, "r") as f:
-            file_str = f.readlines()[0].strip().split(" ")[0]
-        img_file = img_dir + "/" + file_str.replace("oxc1_", "") + ".jpg"
+        aps = []
+        for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):
+            with open(query, "r") as f:
+                file_str = f.readlines()[0].strip().split(" ")[0]
+            img_file = img_dir + "/" + file_str.replace("oxc1_", "") + ".jpg"
 
-        results = database.search(db_dir, columns, num_results=25, query=Image.open(img_file))
-        ap = compute_ap(results, query)
-        aps.append(ap)
+            results = database.search(db_dir, column_set, num_results=25, query=Image.open(img_file))
+            ap = compute_ap(results, query)
+            aps.append(ap)
 
-    print(
-        f"average precision: \t\t min = {np.min(aps):.3f} \t\t median = {np.median(aps):.3f} \t\t mean = {np.mean(aps):.3f} \t\t max = {np.max(aps):.3f}"
-    )
+        print(
+            f"average precision: \t\t min = {np.min(aps):.3f} \t\t median = {np.median(aps):.3f} \t\t mean = {np.mean(aps):.3f} \t\t max = {np.max(aps):.3f}"
+        )

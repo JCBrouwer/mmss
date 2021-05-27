@@ -22,7 +22,7 @@ def ensure_shape(im, size):
 
 
 class Images(Dataset):
-    def __init__(self, filenames, size=300):
+    def __init__(self, filenames, size=512):
         self.filenames = filenames
         self.size = size
 
@@ -41,7 +41,7 @@ class Images(Dataset):
 
 # TODO use `decord` for this instead, should be much faster
 class VideoFrames(Dataset):
-    def __init__(self, filenames, size=300, num_frames=8):
+    def __init__(self, filenames, size=512, num_frames=8):
         self.filenames = filenames
         self.size = size
         self.num_frames = num_frames

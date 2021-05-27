@@ -25,7 +25,7 @@ class SearchColumns:
 CachedValue = namedtuple("CachedValue", ("key", "val"))
 DB = CachedValue("", None)
 SEARCH_DATA = CachedValue("", None)
-
+# TODO when adding multiple columns, the cache breaks with an IndexError because the cached value isn't updated
 
 def search(db_dir, columns, num_results, query):
     global DB

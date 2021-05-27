@@ -73,7 +73,7 @@ class Database:
         faiss.write_index(index, f"{self.directory}/{column_name}.index")
         joblib.dump(self.id_file_map, self.map_file, compress=9)
 
-        print(f"Finished adding {len(files)} files to column {column_name}")
+        print(f"Finished adding {len(files)} entries to column {column_name}")
         print(f"Took {time() - t} seconds")
 
     def random_sample(self, index, num_samples, verbose=True):
@@ -92,7 +92,7 @@ class Database:
     def train_representative(self, index, num_samples=10_000):
         index.train(self.random_sample(index, num_samples, verbose=False))
 
-    def search(self, queries, columns, k=25, reduce=np.mean):
+    def search(self, queries, columns, k=25, reduce=np.sum):
         """Search for queries in columns"""
         if not isinstance(queries, list):
             queries = [queries]

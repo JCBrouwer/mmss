@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from models import Artemis, Clip, SearchableModel, Sift  # , Histogram
+from models import Artemis, Clip, SearchableModel  # , Histogram
+from models.keypoint import BRISK, ORB, SIFT
 
 from features.data import Images
 from features.feature import Feature
@@ -35,7 +36,17 @@ REGISTRY = {
     "sift": RegistryEntry(
         name="sift",
         insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-        search_model=Sift(),
+        search_model=SIFT(),
+    ),
+    "orb": RegistryEntry(
+        name="orb",
+        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+        search_model=ORB(),
+    ),
+    "brisk": RegistryEntry(
+        name="brisk",
+        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+        search_model=BRISK(),
     ),
 }
 
