@@ -92,24 +92,36 @@ class Database:
     def train_representative(self, index, num_samples=10_000):
         index.train(self.random_sample(index, num_samples, verbose=False))
 
-    def search(self, queries, columns, k=25, reduce=np.sum):
+    def search(self, queries, columns, k=25, reduce=np.sum, jegou_criterion=True):
         """Search for queries in columns"""
         if not isinstance(queries, list):
             queries = [queries]
         results = {}
         for query in queries:
             for column_name in columns:
-                distances, ids = self.indices[column_name].search(query, k=2 * k)
-                for dist, id in zip(distances.flatten(), ids.flatten()):
-                    if id not in results:
-                        results[id] = []
-                    results[id].append(dist)
+                distances, ids = self.indices[column_name].search(query, k=k)
+                if distances.shape[0] == 1:
+                    for dist, id in zip(distances.squeeze(), ids.squeeze()):
+                        if id not in results:
+                            results[id] = []
+                        results[id].append(dist)
+                else:
+                    for x in range(len(distances)):
+                        for y in range(k):
+
+                            if jegou_criterion:
+                                distances[x, y] = -max(distances[x, -1] - distances[x, y], 0)
+
+                            if ids[x, y] not in results:
+                                results[ids[x, y]] = []
+                            results[ids[x, y]].append(distances[x, y])
 
         # sort results by number of occurrences of file_id, break ties by distance (-length to sort descending)
-        best_results = sorted(results.items(), key=lambda id_dists: (-len(id_dists[1]), reduce(id_dists[1])))[:k]
+        best_results = sorted(results.items(), key=lambda id_dists: reduce(id_dists[1]))[:k]
 
         filenames, distances = [], []
         for id, dist in best_results:
             filenames.append(self.id_file_map[id])
             distances.append(reduce(dist))
+
         return filenames, distances
