@@ -1,18 +1,15 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from models import Artemis, Clip, SearchableModel
+from models import Artemis, Clip, SearchableModel, YoloClasses
 
-from features.data import Images
+from features.data import Images, ImagesNoop
 from features.feature import Feature
 from features.primitives import ModelFeature, ModelPipelineFeature
-
-# from models.hist import Histogram
 
 
 @dataclass
 class RegistryEntry:
-
     name: str
     insert_fn: Callable[[List[str], int, int, SearchableModel], Feature]
     search_model: SearchableModel
@@ -29,11 +26,12 @@ REGISTRY = {
         insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([Artemis(), em], Images(f), batch_size=bs, num_workers=nw),
         search_model=Clip(),
     ),
-    # "histogram": RegistryEntry(
-    #     name="color-histogram",
-    #     insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
-    #     search_model=Histogram(),
-    # ),
+    "yolo": RegistryEntry(
+        name="yolo-classes-clip-text-embedding",
+        insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([YoloClasses(), em], ImagesNoop(f), batch_size=bs,
+                                                             num_workers=nw),
+        search_model=Clip(),
+    ),
 }
 
 
