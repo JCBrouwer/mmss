@@ -67,6 +67,7 @@ if __name__ == "__main__":
     db_dir = f"cache/oxbuild.db"
 
     for column_set in [
+        ["clip", "sift", "orb", "brisk"],
         ["clip"],
         ["sift"],
         ["orb"],
@@ -75,12 +76,11 @@ if __name__ == "__main__":
         ["clip", "orb"],
         ["clip", "brisk"],
         ["sift", "orb", "brisk"],
-        ["clip", "sift", "orb", "brisk"],
     ]:
         print(column_set)
         indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in column_set)
         if not indices_exist:
-            database.insert(db_dir=db_dir, img_dir=img_dir, columns=column_set, num_workers=8)
+            database.insert(db_dir=db_dir, img_dir=img_dir, columns=column_set, num_workers=4)
 
         aps = []
         for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):

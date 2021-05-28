@@ -6,7 +6,6 @@ import faiss
 import joblib
 import numpy as np
 from bidict import bidict
-from collections import Counter
 
 
 class Database:
@@ -43,6 +42,8 @@ class Database:
         if not column_name in self.indices:
             self.indices[column_name] = faiss.index_factory(size, index_type)
         index = self.indices[column_name]
+        if faiss.get_num_gpus() > 0:
+            index = faiss.index_cpu_to_all_gpus(index)
 
         # process the feature
         files, features = feature.process()
@@ -70,6 +71,10 @@ class Database:
 
         # insert to the index and write everything to disk
         index.add_with_ids(features.astype(np.float32), ids)
+
+        if faiss.get_num_gpus() > 0:
+            index = faiss.index_gpu_to_cpu(index)
+
         faiss.write_index(index, f"{self.directory}/{column_name}.index")
         joblib.dump(self.id_file_map, self.map_file, compress=9)
 

@@ -1,13 +1,16 @@
+import sys
 from collections import defaultdict
 from typing import List, Union
+
+import torch
 from PIL.Image import Image
 from torch.tensor import Tensor
-import torch
+
 from models.model import Model
 
 
-class YoloClasses(Model):
-    def __init__(self, ):
+class Yolo(Model):
+    def __init__(self,):
         self.model = None
         self.device = None
 
@@ -19,7 +22,8 @@ class YoloClasses(Model):
 
     def initialize(self, device):
         self.device = device
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+
+        self.model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 
     def __call__(self, inputs: List[Union[Image, Tensor]]):
         if not isinstance(inputs, list):
@@ -46,7 +50,9 @@ class YoloClasses(Model):
                         name_dict_img[c_name] += float(conf)
                 sorted_res = [pair[0] for pair in sorted(name_dict_img.items(), key=lambda item: item[1], reverse=True)]
                 if len(sorted_res) > self.output_size:
-                    sorted_res = sorted_res[:self.output_size]
-                outputs[i] = sorted_res
+                    sorted_res = sorted_res[: self.output_size]
+                print(sorted_res)
+                print(" ".join(sorted_res))
+                outputs[i] = " ".join(sorted_res)
 
         return outputs

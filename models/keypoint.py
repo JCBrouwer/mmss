@@ -49,7 +49,10 @@ class KeyPointMatching(SearchableModel):
                 # use RootSIFT https://www.robots.ox.ac.uk/~vgg/publications/2012/Arandjelovic12/arandjelovic12.pdf
                 descriptors = np.sqrt(descriptors / np.abs(descriptors).max(axis=1)[:, None])
 
-            outputs.append(descriptors[: self.n_keypoints])
+            if self.type == "brisk" and self.n_keypoints != 0:
+                descriptors = descriptors[: self.n_keypoints]
+
+            outputs.append(descriptors)
         return outputs
 
     def search(self, query: List[Union[Image, Tensor]]):
@@ -57,16 +60,16 @@ class KeyPointMatching(SearchableModel):
 
 
 class SIFT(KeyPointMatching):
-    def __init__(self, n_keypoints=150):
+    def __init__(self, n_keypoints=0):
         super().__init__("sift", n_keypoints)
 
 
 class ORB(KeyPointMatching):
-    def __init__(self, n_keypoints=150):
+    def __init__(self, n_keypoints=0):
         super().__init__("orb", n_keypoints)
 
 
 class BRISK(KeyPointMatching):
-    def __init__(self, n_keypoints=150):
+    def __init__(self, n_keypoints=0):
         super().__init__("brisk", n_keypoints)
 

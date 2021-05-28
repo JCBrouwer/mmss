@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from models import Artemis, Clip, SearchableModel, YoloClasses  # , Histogram
+from models import Artemis, Clip, SearchableModel, Yolo  # , Histogram
 from models.keypoint import BRISK, ORB, SIFT
 
 from features.data import Images, ImagesNoop
@@ -48,9 +48,9 @@ REGISTRY = {
         search_model=BRISK(),
     ),
     "yolo": RegistryEntry(
-        name="yolo-classes-clip-text-embedding",
+        name="yolo-clip-text-embedding",
         insert_fn=lambda f, bs, nw, em: ModelPipelineFeature(
-            [YoloClasses(), em], ImagesNoop(f), batch_size=bs, num_workers=nw
+            [Yolo(), em], ImagesNoop(f), batch_size=bs, num_workers=nw
         ),
         search_model=Clip(),
     ),

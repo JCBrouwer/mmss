@@ -8,10 +8,11 @@ import numpy as np
 import torch.multiprocessing as mp
 from tqdm import tqdm
 from util import download
+from glob import glob
 
 img_dir = "cache/coco/val2014/"
 db_dir = "cache/coco.db"
-columns = ["clip"]
+columns = ["yolo", "clip"]
 n_workers = mp.cpu_count()
 
 if not os.path.exists("cache/coco/dataset_coco.json"):
@@ -41,8 +42,9 @@ if not os.path.exists(img_dir):
         f.extractall("cache/coco/")
     os.remove(path)
 
-if not os.path.exists(db_dir):
-    database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns)
+indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in columns)
+if not indices_exist:
+    database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=4)
 
 with open("cache/coco/karpathy_val.json", "r") as f:
     annotations = json.load(f)

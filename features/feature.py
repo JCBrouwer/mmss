@@ -95,7 +95,7 @@ class Feature(metaclass=ABCMeta):
         for i, model in enumerate(self.models):
             model.initialize(device)
 
-            if not isinstance(model.model, (torch.jit.ScriptModule, torch.jit.ScriptFunction)):
+            if isinstance(model.model, torch.nn.Module):
                 # TODO figure out a way to move this out of worker_init, this is executed on all workers --> inefficient
                 # must be called AFTER model.initialize() though
                 try:
