@@ -47,7 +47,9 @@ class KeyPointMatching(SearchProcessor):
 
             if self.type == "sift":
                 # use RootSIFT https://www.robots.ox.ac.uk/~vgg/publications/2012/Arandjelovic12/arandjelovic12.pdf
-                descriptors = np.sqrt(descriptors / np.abs(descriptors).max(axis=1)[:, None])
+                denom = np.abs(descriptors).max(axis=1)[:, None]
+                if np.all(denom != 0):
+                    descriptors = np.sqrt(descriptors / denom)
 
             if self.type == "brisk" and self.n_keypoints != 0:
                 descriptors = descriptors[: self.n_keypoints]

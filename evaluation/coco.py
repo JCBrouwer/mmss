@@ -12,8 +12,8 @@ from glob import glob
 
 img_dir = "cache/coco/val2014/"
 db_dir = "cache/coco.db"
-columns = ["yolo", "clip"]
-n_workers = mp.cpu_count()
+columns = ["clip", "yolo"]
+n_workers = 8
 
 if not os.path.exists("cache/coco/dataset_coco.json"):
     path, _ = download("https://cs.stanford.edu/people/karpathy/deepimagesent/caption_datasets.zip")
@@ -42,9 +42,14 @@ if not os.path.exists(img_dir):
         f.extractall("cache/coco/")
     os.remove(path)
 
-indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in columns)
-if not indices_exist:
-    database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=2)
+indices_exist = [any(col in index for index in glob(db_dir + "/*.index")) for col in columns]
+if not all(indices_exist):
+    database.insert(
+        db_dir=db_dir,
+        img_dir=img_dir,
+        columns=[col for col, exist in zip(columns, indices_exist) if not exist],
+        num_workers=2,
+    )
 
 with open("cache/coco/karpathy_val.json", "r") as f:
     annotations = json.load(f)
@@ -65,7 +70,7 @@ if __name__ == "__main__":
 
     ranks = []
     with mp.Pool(n_workers) as pool:
-        indices = np.random.permutation(5 * len(annotations))
+        indices = np.random.permutation(5 * len(annotations))[: len(annotations) // 2]
         for rank in tqdm(pool.imap_unordered(retrieve, indices), total=len(indices)):
             ranks.append(rank)
 

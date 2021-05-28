@@ -5,6 +5,7 @@ from time import time
 import faiss
 import joblib
 import numpy as np
+import torch
 from bidict import bidict
 
 
@@ -31,6 +32,11 @@ class Database:
 
         print(f"Loading database with {len(self.id_file_map)} files and {len(self.indices.keys())} columns")
 
+        try:
+            self.rank = torch.multiprocessing.current_process()._identity[0] % torch.cuda.device_count()
+        except:
+            self.rank = 0
+
     def index(self, feature, column_name=None, index_type="IDMap,Flat"):
         """Add new files to index"""
         t = time()
@@ -47,6 +53,7 @@ class Database:
                 expanded_files += [file] * len(feat)
             files = np.array(expanded_files)
             features = np.concatenate(features, axis=0)
+        features = features.astype(np.float32)
 
         # check if index for this feature already exists, otherwise create it
         size = feature.size
@@ -54,11 +61,11 @@ class Database:
             self.indices[column_name] = faiss.index_factory(size, index_type)
         index = self.indices[column_name]
         if faiss.get_num_gpus() > 0:
-            index = faiss.index_cpu_to_all_gpus(index)
+            index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), self.rank, index)
 
         # if index needs training, train
         if not index.is_trained:
-            index.train(index, features)
+            index.train(features)
 
         # get ids for each file, some might already be present in our id_file_map
         ids = []
@@ -70,7 +77,7 @@ class Database:
         ids = np.array(ids)
 
         # insert to the index and write everything to disk
-        index.add_with_ids(features.astype(np.float32), ids)
+        index.add_with_ids(features, ids)
 
         if faiss.get_num_gpus() > 0:
             index = faiss.index_gpu_to_cpu(index)
@@ -97,6 +104,29 @@ class Database:
     def train_representative(self, index, num_samples=10_000):
         index.train(self.random_sample(index, num_samples, verbose=False))
 
+    def upgrade_indices(self, new_index_type="IDMap,IVF100,PQ8"):
+        for column_name, index in self.indices.items():
+            if faiss.get_num_gpus() > 0:
+                index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), self.rank, index)
+
+            vectors = index.reconstruct_n(0, index.ntotal)
+            ids = np.array([index.id_map.at(i) for i in range(index.id_map.size())])
+            assert len(vectors) == len(ids)
+
+            new_index = faiss.index_factory(vectors.shape[1], new_index_type)
+            if faiss.get_num_gpus() > 0:
+                new_index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), self.rank, new_index)
+
+            if not new_index.is_trained:
+                new_index.train(vectors)
+
+            new_index.add_with_ids(vectors, ids)
+
+            if faiss.get_num_gpus() > 0:
+                new_index = faiss.index_gpu_to_cpu(new_index)
+
+            faiss.write_index(new_index, f"{self.directory}_new/{column_name}.index")
+
     def search(self, queries, columns, k=25, reduce=np.sum, jegou_criterion=True):
         """Search for queries in columns"""
         if not isinstance(queries, list):
@@ -106,10 +136,11 @@ class Database:
 
             index = self.indices[column_name]
             if faiss.get_num_gpus() > 0:
-                index = faiss.index_cpu_to_all_gpus(index)
+                index = faiss.index_cpu_to_gpu(faiss.StandardGpuResources(), self.rank, index)
 
             for query in queries:
                 distances, ids = index.search(query, k=k)
+                print(ids)
                 if distances.shape[0] == 1:
                     for dist, id in zip(distances.squeeze(), ids.squeeze()):
                         if id not in results:
@@ -131,6 +162,9 @@ class Database:
 
         filenames, distances = [], []
         for id, dist in best_results:
+            if id == -1:
+                continue
+            print(id, dist)
             filenames.append(self.id_file_map[id])
             distances.append(reduce(dist))
 

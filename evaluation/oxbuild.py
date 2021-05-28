@@ -68,19 +68,25 @@ if __name__ == "__main__":
 
     for column_set in [
         # ["clip", "sift", "orb", "brisk"],
+        ["clip", "sift"],
         ["clip"],
         ["sift"],
         # ["orb"],
         # ["brisk"],
-        ["clip", "sift"],
         # ["clip", "orb"],
         # ["clip", "brisk"],
         # ["sift", "orb", "brisk"],
     ]:
         print(column_set)
-        indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in column_set)
-        if not indices_exist:
-            database.insert(db_dir=db_dir, img_dir=img_dir, columns=column_set, num_workers=4)
+
+        indices_exist = [any(col in index for index in glob(db_dir + "/*.index")) for col in column_set]
+        if not all(indices_exist):
+            database.insert(
+                db_dir=db_dir,
+                img_dir=img_dir,
+                columns=[col for col, exist in zip(column_set, indices_exist) if not exist],
+                num_workers=4,
+            )
 
         aps = []
         for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):

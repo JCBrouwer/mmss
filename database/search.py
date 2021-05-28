@@ -53,7 +53,7 @@ def count_and_interleave(filenames, num_results):
 
 def jegou_criterion(filenames, distances, num_results):
     for x in range(len(filenames)):
-        for y in range(num_results):
+        for y in range(len(distances[x])):
             distances[x][y] = -max(distances[x][-1] - distances[x][y], 0)
     filenames = list(itertools.chain.from_iterable(filenames))
     distances = list(itertools.chain.from_iterable(distances))
