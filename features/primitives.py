@@ -3,7 +3,7 @@ import torch
 from features.feature import Feature
 
 
-class ModelFeature(Feature):
+class ProcessorFeature(Feature):
     def __init__(self, model, dataset, batch_size, num_workers):
         super().__init__(dataset, batch_size, num_workers)
         self.model = model
@@ -22,11 +22,11 @@ def transpose(list_of_lists):
     return tuple(map(list, zip(*list_of_lists)))
 
 
-class ModelPipelineFeature(Feature):
-    def __init__(self, models, dataset, batch_size, num_workers):
+class ProcessorPipelineFeature(Feature):
+    def __init__(self, processors, dataset, batch_size, num_workers):
         super().__init__(dataset, batch_size, num_workers)
-        self.models = models
-        self.size = models[-1].output_size
+        self.models = processors
+        self.size = processors[-1].output_size
 
     def process_batch(self, batch):
         filenames, embeddings = [], []

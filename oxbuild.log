@@ -154,3 +154,13 @@ average precision: 		 min = 0.000 		 median = 0.073 		 mean = 0.120 		 max = 0.4
 average precision: 		 min = 0.013 		 median = 0.162 		 mean = 0.205 		 max = 0.700
 ['clip', 'sift', 'orb', 'brisk']
 average precision: 		 min = 0.013 		 median = 0.162 		 mean = 0.205 		 max = 0.700
+
+
+full size images + 500 keypoints
+['clip']
+average precision: 		 min = 0.040 		 median = 0.418 		 mean = 0.392 		 max = 0.865
+['sift']
+average precision: 		 min = 0.018 		 median = 0.295 		 mean = 0.357 		 max = 0.928
+['clip', 'sift']
+average precision: 		 min = 0.029 		 median = 0.463 		 mean = 0.571 		 max = 1.455
+

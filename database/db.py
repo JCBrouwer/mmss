@@ -29,21 +29,13 @@ class Database:
             column_name = os.path.basename(index_file).replace(".index", "")
             self.indices[column_name] = faiss.read_index(index_file)
 
-        print(f"Loading database with {len(self.id_file_map)} rows and {len(self.indices.keys())} columns")
+        print(f"Loading database with {len(self.id_file_map)} files and {len(self.indices.keys())} columns")
 
     def index(self, feature, column_name=None, index_type="IDMap,Flat"):
         """Add new files to index"""
         t = time()
         if column_name is None:
             column_name = feature.__class__.__name__
-
-        # check if index for this feature already exists, otherwise create it
-        size = feature.size
-        if not column_name in self.indices:
-            self.indices[column_name] = faiss.index_factory(size, index_type)
-        index = self.indices[column_name]
-        if faiss.get_num_gpus() > 0:
-            index = faiss.index_cpu_to_all_gpus(index)
 
         # process the feature
         files, features = feature.process()
@@ -55,6 +47,14 @@ class Database:
                 expanded_files += [file] * len(feat)
             files = np.array(expanded_files)
             features = np.concatenate(features, axis=0)
+
+        # check if index for this feature already exists, otherwise create it
+        size = feature.size
+        if not column_name in self.indices:
+            self.indices[column_name] = faiss.index_factory(size, index_type)
+        index = self.indices[column_name]
+        if faiss.get_num_gpus() > 0:
+            index = faiss.index_cpu_to_all_gpus(index)
 
         # if index needs training, train
         if not index.is_trained:
@@ -102,9 +102,14 @@ class Database:
         if not isinstance(queries, list):
             queries = [queries]
         results = {}
-        for query in queries:
-            for column_name in columns:
-                distances, ids = self.indices[column_name].search(query, k=k)
+        for column_name in columns:
+
+            index = self.indices[column_name]
+            if faiss.get_num_gpus() > 0:
+                index = faiss.index_cpu_to_all_gpus(index)
+
+            for query in queries:
+                distances, ids = index.search(query, k=k)
                 if distances.shape[0] == 1:
                     for dist, id in zip(distances.squeeze(), ids.squeeze()):
                         if id not in results:

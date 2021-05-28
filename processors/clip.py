@@ -9,12 +9,12 @@ from PIL.Image import Image
 from clip.simple_tokenizer import SimpleTokenizer
 from torch.tensor import Tensor
 
-from models.model import SearchableModel
+from processors.base import SearchProcessor
 
 CLIP_N_PIX = 224
 
 
-class Clip(SearchableModel):
+class Clip(SearchProcessor):
     def __init__(self, backbone="ViT-B/32"):
         self.backbone = backbone
         self.model = None
@@ -60,7 +60,7 @@ class Clip(SearchableModel):
         for img_or_text in inputs:
             if isinstance(img_or_text, str):
                 text = self.tokenize(img_or_text).to(self.device)
-                outputs.append(self.model.encode_text(text))
+                outputs.append(self.model.encode_text(text).detach().cpu().numpy())
             else:
                 img = (
                     tv.transforms.functional.to_tensor(img_or_text).unsqueeze(0)

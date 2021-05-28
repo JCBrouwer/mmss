@@ -11,12 +11,13 @@ import torchvision as tv
 from PIL.Image import Image
 from util import download
 
-from artemis.emotions import ARTEMIS_EMOTIONS
+# from artemis.emotions import ARTEMIS_EMOTIONS
 from artemis.in_out.neural_net_oriented import load_saved_speaker
-from artemis.neural_models.image_emotion_clf import ImageEmotionClassifier
-from artemis.neural_models.mlp import MLP
-from artemis.neural_models.resnet_encoder import ResnetEncoder
-from models.model import Model
+
+# from artemis.neural_models.image_emotion_clf import ImageEmotionClassifier
+# from artemis.neural_models.mlp import MLP
+# from artemis.neural_models.resnet_encoder import ResnetEncoder
+from processors.base import Processor
 
 speaker_saved_args = "cache/modelzoo/artemis/config.json.txt"
 speaker_checkpoint = "cache/modelzoo/artemis/speaker.pt"
@@ -177,7 +178,7 @@ class ArtemisSubModule(torch.nn.Module):
         return self.beam_search(image)
 
 
-class Artemis(Model):
+class Artemis(Processor):
     def __init__(self):
         self.model = None
         self.output_size = -1

@@ -44,7 +44,7 @@ if not os.path.exists(img_dir):
 
 indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in columns)
 if not indices_exist:
-    database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=4)
+    database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns, num_workers=2)
 
 with open("cache/coco/karpathy_val.json", "r") as f:
     annotations = json.load(f)

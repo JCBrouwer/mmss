@@ -21,7 +21,7 @@ def ensure_shape(im, size):
     return im
 
 
-class ImagesNoop(Dataset):
+class ImagesFullSize(Dataset):
     def __init__(self, filenames):
         self.filenames = filenames
 

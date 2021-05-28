@@ -5,10 +5,10 @@ import cv2 as cv
 import torch
 import numpy as np
 from torchvision.transforms.functional import to_pil_image
-from models.model import SearchableModel
+from processors.base import SearchProcessor
 
 
-class KeyPointMatching(SearchableModel):
+class KeyPointMatching(SearchProcessor):
     def __init__(self, type, n_keypoints):
         self.n_keypoints = n_keypoints
         self.device = "cpu"
@@ -60,16 +60,16 @@ class KeyPointMatching(SearchableModel):
 
 
 class SIFT(KeyPointMatching):
-    def __init__(self, n_keypoints=0):
+    def __init__(self, n_keypoints=1000):
         super().__init__("sift", n_keypoints)
 
 
 class ORB(KeyPointMatching):
-    def __init__(self, n_keypoints=0):
+    def __init__(self, n_keypoints=1000):
         super().__init__("orb", n_keypoints)
 
 
 class BRISK(KeyPointMatching):
-    def __init__(self, n_keypoints=0):
+    def __init__(self, n_keypoints=1000):
         super().__init__("brisk", n_keypoints)
 

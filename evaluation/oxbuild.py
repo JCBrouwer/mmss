@@ -67,15 +67,15 @@ if __name__ == "__main__":
     db_dir = f"cache/oxbuild.db"
 
     for column_set in [
-        ["clip", "sift", "orb", "brisk"],
+        # ["clip", "sift", "orb", "brisk"],
         ["clip"],
         ["sift"],
-        ["orb"],
-        ["brisk"],
+        # ["orb"],
+        # ["brisk"],
         ["clip", "sift"],
-        ["clip", "orb"],
-        ["clip", "brisk"],
-        ["sift", "orb", "brisk"],
+        # ["clip", "orb"],
+        # ["clip", "brisk"],
+        # ["sift", "orb", "brisk"],
     ]:
         print(column_set)
         indices_exist = all(any(col in index for index in glob(db_dir + "/*.index")) for col in column_set)

@@ -21,7 +21,7 @@ class SearchColumns:
     column_names: List[str]
 
 
-# cache the database and search models so we don't have to reload when searching multiple times
+# cache the database and search processors so we don't have to reload when searching multiple times
 CachedValue = namedtuple("CachedValue", ("key", "val"))
 DB = CachedValue("", None)
 SEARCH_DATA = CachedValue("", None)
