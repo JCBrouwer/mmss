@@ -21,6 +21,19 @@ def ensure_shape(im, size):
     return im
 
 
+class ImagesNoop(Dataset):
+    def __init__(self, filenames):
+        self.filenames = filenames
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        filename = self.filenames[idx]
+        image_tensor = tv.transforms.functional.to_tensor(Image.open(filename).convert("RGB")).unsqueeze(0)
+        return filename, image_tensor
+
+
 class Images(Dataset):
     def __init__(self, filenames, size=512):
         self.filenames = filenames
