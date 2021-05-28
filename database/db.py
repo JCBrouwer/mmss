@@ -140,7 +140,6 @@ class Database:
 
             for query in queries:
                 distances, ids = index.search(query, k=k)
-                print(ids)
                 if distances.shape[0] == 1:
                     for dist, id in zip(distances.squeeze(), ids.squeeze()):
                         if id not in results:
@@ -164,7 +163,6 @@ class Database:
         for id, dist in best_results:
             if id == -1:
                 continue
-            print(id, dist)
             filenames.append(self.id_file_map[id])
             distances.append(reduce(dist))
 
