@@ -16,8 +16,7 @@ def insert(db_dir, img_dir, columns, batch_size=8, num_workers=2):
     for feature in features.registry.retrieve(columns):
         print(f"Processing {feature.name}...")
         db.index(
-            feature=feature.insert_fn(files, batch_size, num_workers, feature.search_model),
-            column_name=feature.name,
+            feature=feature.insert_fn(files, batch_size, num_workers, feature.search_model), column_name=feature.name,
         )
 
 
