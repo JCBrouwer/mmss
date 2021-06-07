@@ -4,6 +4,7 @@ https://colab.research.google.com/github/haltakov/natural-language-image-search/
 """
 
 import os
+from pathlib import Path
 from time import time
 
 import faiss
@@ -75,16 +76,23 @@ if __name__ == "__main__":
     clip.initialize("cuda" if torch.cuda.is_available() else "cpu")
 
     for _ in range(5):
-        raw_query = input("Query: ")
-        query = raw_query.split("|")
+        out_file = []
+        query = input("Query: ")
+        query = query.split("|")
         reference = None
         for i, q in enumerate(query):
             q = q.strip()
             if "/" in q:
                 reference = Image.open(q)
                 query[i] = reference
+                out_file += [Path(q).stem]
+            else:
+                out_file += [q]
+        out_file = " ".join(out_file)
 
-        filenames, distances = db.search(queries=clip.search(query), columns=["clip-image-embedding"], k=num_results)
+        filenames, distances = db.search(
+            queries=np.mean(clip.search(query), axis=0, keepdims=True), columns=["clip-image-embedding"], k=num_results
+        )
         results = jegou_criterion([filenames], [distances], num_results)
 
         fig, axarr = plt.subplots(1, len(results) + (1 if reference else 0), figsize=((5 if reference else 4) * 4, 4))
@@ -92,7 +100,8 @@ if __name__ == "__main__":
             display(axarr.flat[j], results[j])
             axarr.flat[j].axis("off")
         if reference:
-            axarr.flat[j].imshow(reference)
-            axarr.flat[j].set_title("Reference")
+            axarr.flat[-1].imshow(reference)
+            axarr.flat[-1].set_title("Reference")
+            axarr.flat[-1].axis("off")
         plt.tight_layout()
-        plt.savefig(f"cache/{raw_query.replace('/','_')}.png")
+        plt.savefig(f"cache/{out_file}.png")
