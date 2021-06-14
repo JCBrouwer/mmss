@@ -31,6 +31,21 @@ def display(ax, url):
     plt.draw()
 
 
+def slerp(val, low, high):
+    omega = np.arccos(np.dot(low / np.linalg.norm(low), high / np.linalg.norm(high)))
+    so = np.sin(omega)
+    return np.sin((1.0 - val) * omega) / so * low + np.sin(val * omega) / so * high
+
+
+def geodesic_mean(embeddings):
+    if len(embeddings) == 1:
+        return embeddings
+    elif len(embeddings) == 2:
+        return [slerp(0.5, embeddings[0], embeddings[1])[None, :]]
+    else:
+        return np.mean(embeddings, axis=0, keepdims=True)
+
+
 if __name__ == "__main__":
     data_dir = "cache/unsplash-dataset/"
     db_dir = f"cache/qualitative.db"
@@ -91,7 +106,7 @@ if __name__ == "__main__":
         out_file = " ".join(out_file)
 
         filenames, distances = db.search(
-            queries=np.mean(clip.search(query), axis=0, keepdims=True), columns=["clip-image-embedding"], k=num_results
+            queries=geodesic_mean(clip.search(query)), columns=["clip-image-embedding"], k=num_results
         )
         results = jegou_criterion([filenames], [distances], num_results)
 
