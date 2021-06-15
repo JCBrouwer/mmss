@@ -146,7 +146,7 @@ if __name__ == '__main__':
     index_performance_dict = dict()
     for entry in registry.REGISTRY:
         total_time, time_per_image = run_performance_analysis(registry.REGISTRY[entry])
-        index_performance_dict[entry.name] = (total_time, time_per_image)
+        index_performance_dict[entry] = (total_time, time_per_image)
 
     query_performance_dict = dict()
     for entry in registry.REGISTRY:
