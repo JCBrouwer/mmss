@@ -120,13 +120,23 @@ def print_indexing_performance():
 
 
 def print_query_performance():
-    pass
+    all_query_performance = query_performance_dict['all']
+    total_time_all = sum(all_query_performance)
+    average_query_time = round(total_time_all / len(all_query_performance), 2)
+    print("#" * 40, "Query Performance", "#" * 40)
+    print(f"Total time: {total_time_all}")
+    print(f"Average time per query: {average_query_time}")
 
+    for key in query_performance_dict.keys():
+        if key == 'all':
+            continue
+        total_time_key = sum(query_performance_dict[key])
+        average_time_key = total_time_key / len(query_performance_dict[key])
+        print()
+        print(f"  {key}:")
+        print(f"  Total time for queries: {total_time_key}")
+        print(f"  Average time per query: {average_time_key}")
 
-# Query length performance
-# Indexing performance analysis
-# Feature performance analysis
-# Google Colab Performance
 
 if __name__ == '__main__':
     print("Analyzing performance on Oxford Buildings")
