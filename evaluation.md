@@ -164,3 +164,50 @@ average precision: 		 min = 0.018 		 median = 0.295 		 mean = 0.357 		 max = 0.9
 ['clip', 'sift']
 average precision: 		 min = 0.029 		 median = 0.463 		 mean = 0.571 		 max = 1.455
 
+
+full size images + 1000 keypoints
+['clip']
+average precision:       min = 0.040         median = 0.416          mean = 0.392        max = 0.865
+['sift']
+average precision:       min = 0.026         median = 0.426          mean = 0.412        max = 0.918
+['clip', 'sift']
+average precision:       min = 0.039         median = 0.506          mean = 0.586        max = 1.482
+
+### Raising the baseline
+
+| Approach | Models | Mean Average Precision |
+| --- | --- | --- |
+| Minimum distance (merge by majority vote + interleaving) | CLIP |  0.151 |
+|   | SIFT | 0.064 |
+|   | CLIP + SIFT | 0.038 |
+| Jegou criterion (merge by majority vote + interleaving) | CLIP |  0.259 |
+|   | SIFT | 0.239 |
+|   | CLIP + SIFT | 0.291 |
+| Jegou criterion (merge by Jegou criterion) | CLIP |  0.259 |
+|   | SIFT | 0.239 |
+|   | CLIP + SIFT | 0.491 |
+| Jegou criterion (merge by Jegou criterion) + more keypoints | CLIP |  0.392 |
+|   | SIFT | 0.412 |
+|   | CLIP + SIFT | 0.586 |
+
+
+### Keypoint Model Comparison
+
+| Models | Min Average Precision | Mean Average Precision | Max Average Precision | 
+| --- | --- | --- | --- |
+|CLIP |  0.040 		 | 0.393 | 0.865 |
+|SIFT |  0.025 		 | 0.239 | 0.699 |
+|ORB |  0.013 		 | 0.125 | 0.286 |
+|BRISK |  0.000 		 | 0.113 | 0.451 |
+|CLIP + SIFT |  0.041 		 | 0.491 | 1.305 |
+|CLIP + ORB |  0.014 		 | 0.132 | 0.321 |
+|CLIP + BRISK |  0.000 		 | 0.120 | 0.475 |
+|CLIP + SIFT + ORB + BRISK |  0.013 		 | 0.205 | 0.700 |
+
+
+### COCO
+
+| Models | R @ 1 | R @ 5 | R @ 10 |
+| --- | --- | --- | --- |
+| CLIP | 0.0247 | 0.0686 | 0.1013 |
+| CLIP + YOLO | 0.0059 | 0.0192 | 0.0316 |
