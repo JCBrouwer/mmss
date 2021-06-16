@@ -1,35 +1,59 @@
 from dataclasses import dataclass
 from typing import Callable, List
 
-from models import Artemis, Clip, SearchableModel, YoloClasses
+from processors import Artemis, Clip, SearchProcessor, Yolo  # , Histogram
+from processors.keypoint import BRISK, ORB, SIFT
 
-from features.data import Images, ImagesNoop
+from features.data import Images, ImagesFullSize
 from features.feature import Feature
-from features.primitives import ModelFeature, ModelPipelineFeature
+from features.primitives import ProcessorFeature, ProcessorPipelineFeature
 
 
 @dataclass
 class RegistryEntry:
     name: str
-    insert_fn: Callable[[List[str], int, int, SearchableModel], Feature]
-    search_model: SearchableModel
+    insert_fn: Callable[[List[str], int, int, SearchProcessor], Feature]
+    search_model: SearchProcessor
 
 
 REGISTRY = {
     "clip": RegistryEntry(
         name="clip-image-embedding",
-        insert_fn=lambda f, bs, nw, em: ModelFeature(em, Images(f), batch_size=bs, num_workers=nw),
+        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, Images(f), batch_size=bs, num_workers=nw),
         search_model=Clip(),
     ),
     "artemis": RegistryEntry(
         name="artemis-caption-clip-text-embedding",
-        insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([Artemis(), em], Images(f), batch_size=bs, num_workers=nw),
+        insert_fn=lambda f, bs, nw, em: ProcessorPipelineFeature(
+            [Artemis(), em], Images(f), batch_size=bs, num_workers=nw
+        ),
         search_model=Clip(),
     ),
+    # "histogram": RegistryEntry(
+    #     name="color-histogram",
+    #     insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, Images(f), batch_size=bs, num_workers=nw),
+    #     search_model=Histogram(),
+    # ),
+    "sift": RegistryEntry(
+        name="sift",
+        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
+        search_model=SIFT(),
+    ),
+    "orb": RegistryEntry(
+        name="orb",
+        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
+        search_model=ORB(),
+    ),
+    "brisk": RegistryEntry(
+        name="brisk",
+        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
+        search_model=BRISK(),
+    ),
     "yolo": RegistryEntry(
-        name="yolo-classes-clip-text-embedding",
-        insert_fn=lambda f, bs, nw, em: ModelPipelineFeature([YoloClasses(), em], ImagesNoop(f), batch_size=bs,
-                                                             num_workers=nw),
+        name="yolo-clip-text-embedding",
+        insert_fn=lambda f, bs, nw, em: ProcessorPipelineFeature(
+            [Yolo(), em], ImagesFullSize(f), batch_size=bs, num_workers=nw
+        ),
         search_model=Clip(),
     ),
 }

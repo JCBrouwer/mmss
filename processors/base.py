@@ -1,14 +1,15 @@
 from abc import ABCMeta, abstractmethod
 from typing import List, Union
 
+import numpy as np
 import torch
 from PIL.Image import Image
 from torch import Tensor
 
 
-class Model(metaclass=ABCMeta):
+class Processor(metaclass=ABCMeta):
     """
-    Models must have:
+    Processors must have:
         - an __init__ function to initialize their object (this should only set information not load any large objects)
         - an initialize function to load the actual model weights into memory on the correct device
         - a __call__ function that takes a batch of inputs and transforms them to a batch of outputs
@@ -37,14 +38,14 @@ class Model(metaclass=ABCMeta):
         raise NotImplementedError
 
     @abstractmethod
-    def __call__(self, inputs):
+    def __call__(self, inputs) -> List[np.ndarray]:
         raise NotImplementedError
 
 
-class SearchableModel(Model, metaclass=ABCMeta):
+class SearchProcessor(Processor, metaclass=ABCMeta):
     """
-    Searchable model type. Not all models have to be searchable hence the abstraction rather than adding an optional
-    override to the base class Model. Any Model that can be searched in using any of the query types specified
+    Searchable model type. Not all processors have to be searchable hence the abstraction rather than adding an optional
+    override to the base class Processor. Any Processor that can be searched in using any of the query types specified
     in the search descriptor should instead have this as their superclass.
     """
 

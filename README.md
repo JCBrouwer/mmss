@@ -47,13 +47,13 @@ database/
     insert.py       # Script to insert new images into the database
     search.py       # Script to search the database based on text queries
 
-models/
-    model.py        # The base Model interface. This class encapsulates a specific model
+processors/
+    base.py         # The base Processor interface. This class encapsulates a specific feature processor
                     # or algorithm that transforms a single raw input data point into
-                    # its corresponding embedding. Handles loading of model weights and
-                    # model-specific preprocessing of raw data
+                    # its corresponding embedding. Handles loading of feature processor weights and
+                    # feature processor-specific preprocessing of raw data
 
-    *.py            # Implementations of specific models
+    *.py            # Implementations of specific processors
 
 features/
     data.py         # torch.Dataset implementations to load in raw images and videos
@@ -62,9 +62,9 @@ features/
                     # to transform it to the specified embedding space. Distributes work
                     # using multiprocessing / multi-GPU where applicable
 
-    primitives.py   # Features that wrap around either a single Model or multiple Models.
+    primitives.py   # Features that wrap around either a single Processor or multiple Processors.
                     # Generally different features can be implemented simply by writing
-                    # the corresponding Model class and wrapping its execution in one of
+                    # the corresponding Processor class and wrapping its execution in one of
                     # these primitives
 
     registry.py     # Stores information on different features for easy access. This is

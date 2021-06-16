@@ -1,13 +1,17 @@
+import gc
 from collections import defaultdict
-from typing import List, Union
+from typing import Union
+
+import torch
+import torchvision as tv
 from PIL.Image import Image
 from torch.tensor import Tensor
-import torch
-from models.model import Model
+
+from processors.base import Processor
 
 
-class YoloClasses(Model):
-    def __init__(self, ):
+class Yolo(Processor):
+    def __init__(self,):
         self.model = None
         self.device = None
 
@@ -19,34 +23,41 @@ class YoloClasses(Model):
 
     def initialize(self, device):
         self.device = device
-        self.model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+        self.model = torch.hub.load(
+            "ultralytics/yolov5", "yolov5x", pretrained=True, device=device, force_reload=True
+        ).eval()
+        if torch.cuda.is_available():
+            self.model = self.model.half()
 
-    def __call__(self, inputs: List[Union[Image, Tensor]]):
-        if not isinstance(inputs, list):
-            inputs = [inputs]
-        results = self.model(inputs)
-        # If this fails then yolov5s might not return result for some inputs and call needs adjustment for batching
+    def __call__(self, inputs: Union[Image, Tensor]):
+        img = tv.transforms.functional.to_pil_image(inputs.squeeze())
+        results = self.model(img)
+
+        # If this fails then yolo might not return result for some inputs and call needs adjustment for batching
         assert len(results) == len(inputs)
 
-        outputs = [[] for _ in range(len(inputs))]
+        outputs = []
         names = results.names
 
         # Allow for batch results distributed per image
-        for i, (im, pred) in enumerate(zip(results.imgs, results.pred)):
+        for pred in results.pred:
             # If there even is any pred
-            if pred is not None:
+            if pred is not None and len(pred) > 0:
                 # Default dict such that there are no key errors/checks required
                 name_dict_img = defaultdict(float)
                 # Pred consists of box params and ends with conf, cls so *_ ignored (still tensors)
                 for *_, conf, cls in pred:
-                    c_name = names[int(cls)]
+                    c_name = names[int(cls.item())]
                     # Check if the confidence is high enough
-                    if float(conf) > self.min_confidence:
+                    if float(conf.item()) > self.min_confidence:
                         # Add to total confidence for this label
-                        name_dict_img[c_name] += float(conf)
+                        name_dict_img[c_name] += float(conf.item())
                 sorted_res = [pair[0] for pair in sorted(name_dict_img.items(), key=lambda item: item[1], reverse=True)]
                 if len(sorted_res) > self.output_size:
-                    sorted_res = sorted_res[:self.output_size]
-                outputs[i] = sorted_res
+                    sorted_res = sorted_res[: self.output_size]
+                outputs.append(" ".join(sorted_res))
+
+            else:
+                outputs.append("")
 
         return outputs

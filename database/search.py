@@ -21,10 +21,43 @@ class SearchColumns:
     column_names: List[str]
 
 
-# cache the database and search models so we don't have to reload when searching multiple times
+# cache the database and search processors so we don't have to reload when searching multiple times
 CachedValue = namedtuple("CachedValue", ("key", "val"))
 DB = CachedValue("", None)
 SEARCH_DATA = CachedValue("", None)
+# TODO when adding multiple columns, the cache breaks with an IndexError because the cached value isn't updated
+
+
+def count_and_interleave(filenames, num_results):
+    # populate front of list with results that are found in multiple columns, ordered by number of occurences
+    counter = Counter(itertools.chain.from_iterable(filenames))
+    results = [filename for filename, count in counter.most_common(num_results) if count > 1]
+
+    # after that, interleave results from the front of each column (as long as its not already in the list)
+    i = 0
+    n = len(filenames)
+    retries = 0
+    while len(results) < num_results:
+        try:
+            filename = filenames[i % n][i // n]
+            retries = 0
+        except IndexError:
+            retries += 1
+            if retries == 10:
+                break
+            continue
+        if filename not in results:
+            results.append(filename)
+        i += 1
+
+
+def jegou_criterion(filenames, distances, num_results):
+    for x in range(len(filenames)):
+        for y in range(len(distances[x])):
+            distances[x][y] = -max(distances[x][-1] - distances[x][y], 0)
+    filenames = list(itertools.chain.from_iterable(filenames))
+    distances = list(itertools.chain.from_iterable(distances))
+    return [f for f, _ in sorted(zip(filenames, distances), key=lambda id_dists: id_dists[1])[:num_results]]
 
 
 def search(db_dir, columns, num_results, query):
@@ -56,26 +89,14 @@ def search(db_dir, columns, num_results, query):
         query = input("Query: ")
 
     # get results from each search model
-    filenames = []
+    filenames, distances = [], []
     for search_data in SEARCH_DATA.val.values():
         query_embeddings = search_data.search_fn(query)
-        fns, _ = DB.val.search(queries=query_embeddings, columns=search_data.column_names, k=num_results)
+        fns, dists = DB.val.search(queries=query_embeddings, columns=search_data.column_names, k=num_results)
         filenames.append(fns)
+        distances.append(dists)
 
-    # populate front of list with results that are found in multiple columns, ordered by number of occurences
-    counter = Counter(itertools.chain.from_iterable(filenames))
-    results = [filename for filename, count in counter.most_common(num_results) if count > 1]
-
-    # after that, interleave results from the front of each column (as long as its not already in the list)
-    i = 0
-    n = len(filenames)
-    while len(results) < num_results:
-        filename = filenames[i % n][i // n]
-        if filename not in results:
-            results.append(filename)
-        i += 1
-
-    return results
+    return jegou_criterion(filenames, distances, num_results)
 
 
 if __name__ == "__main__":

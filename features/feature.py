@@ -41,7 +41,7 @@ class Feature(metaclass=ABCMeta):
     """
     Features must have:
         - an process_batch function to take a batch of filenames and raw data and process it to a given embedding space
-        - a list of Model objects needed to calculate the final embeddings
+        - a list of Processor objects needed to calculate the final embeddings
     """
 
     @classmethod
@@ -50,9 +50,9 @@ class Feature(metaclass=ABCMeta):
             hasattr(subclass, "process_batch")
             and callable(subclass.initialize)
             #
-            and hasattr(subclass, "models")
+            and hasattr(subclass, "processors")
             and isinstance(
-                subclass.models, List[Union[torch.nn.Module, torch.jit.ScriptModule, torch.jit.ScriptFunction]]
+                subclass.processors, List[Union[torch.nn.Module, torch.jit.ScriptModule, torch.jit.ScriptFunction]]
             )
         )
 
@@ -65,7 +65,7 @@ class Feature(metaclass=ABCMeta):
             DataLoader(
                 dataset=dataset,
                 batch_size=batch_size * num_workers,
-                prefetch_factor=batch_size,
+                prefetch_factor=2 * batch_size,
                 num_workers=num_workers,
                 shuffle=True,
                 collate_fn=self.collate,
@@ -73,7 +73,7 @@ class Feature(metaclass=ABCMeta):
             )
         )
 
-        self.models = []
+        self.processors = []
 
     def collate(self, batch):
         return [(fns, ims) for fns, ims in batch if ims is not None]
@@ -87,25 +87,25 @@ class Feature(metaclass=ABCMeta):
         self.__dict__ = state
 
     def worker_init_fn(self):
-        """Initialize models used for processing the feature on the correct device"""
+        """Initialize processors used for processing the feature on the correct device"""
         self = deepcopy(self)
         rank = threading.get_native_id()
         device = f"cuda:{rank % torch.cuda.device_count()}" if torch.cuda.is_available() else "cpu"
 
-        for i, model in enumerate(self.models):
-            model.initialize(device)
+        for i, processor in enumerate(self.processors):
+            processor.initialize(device)
 
-            if not isinstance(model.model, (torch.jit.ScriptModule, torch.jit.ScriptFunction)):
-                # TODO figure out a way to move this out of worker_init, this is executed on all workers --> inefficient
-                # must be called AFTER model.initialize() though
-                try:
-                    # try to convert model to TorchScript which avoids python's GIL for heavy computation
-                    self.models[i].model = torch.jit.script(model.model)
-                except Exception as e:
-                    print(e)
-                    print(
-                        f"WARNING: converting {self.models[i].__class__.__name__} to TorchScript failed, feature calculation might be slower..."
-                    )
+            # if isinstance(processor.model, torch.nn.Module):
+            #     # TODO figure out a way to move this out of worker_init, this is executed on all workers --> inefficient
+            #     # must be called AFTER processor.initialize() though
+            #     try:
+            #         # try to convert Processor's model to TorchScript which avoids python's GIL for heavy computation
+            #         self.processors[i].model = torch.jit.script(processor.model)
+            #     except Exception as e:
+            #         print(e)
+            #         print(
+            #             f"WARNING: converting {self.processors[i].__class__.__name__} to TorchScript failed, feature calculation might be slower..."
+            #         )
 
         # HACK to get around ThreadPool pickling of member functions. This results in the main thread's Feature object
         # being "self" rather than the worker's Feature object. Therefore we load the worker's process_batch function
@@ -127,7 +127,7 @@ class Feature(metaclass=ABCMeta):
                 filenames += fns
                 embeddings += embds
                 progress.update(len(fns))
-        return np.array(filenames), np.concatenate(embeddings)
+        return np.array(filenames), embeddings
 
     @abstractmethod
     def process_batch(self, batch: List[Tuple[str, np.ndarray]]) -> Tuple[List[str], List[np.ndarray]]:

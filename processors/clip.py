@@ -9,12 +9,12 @@ from PIL.Image import Image
 from clip.simple_tokenizer import SimpleTokenizer
 from torch.tensor import Tensor
 
-from models.model import SearchableModel
+from processors.base import SearchProcessor
 
 CLIP_N_PIX = 224
 
 
-class Clip(SearchableModel):
+class Clip(SearchProcessor):
     def __init__(self, backbone="ViT-B/32"):
         self.backbone = backbone
         self.model = None
@@ -51,7 +51,7 @@ class Clip(SearchableModel):
         return result
 
     def search(self, query: List[Union[Image, str, Tensor]]):
-        return np.array(self(query), dtype=np.float32)
+        return np.concatenate(self(query)).astype(np.float32)
 
     def __call__(self, inputs: List[Union[Image, str, Tensor]]):
         if not isinstance(inputs, list):
@@ -60,7 +60,7 @@ class Clip(SearchableModel):
         for img_or_text in inputs:
             if isinstance(img_or_text, str):
                 text = self.tokenize(img_or_text).to(self.device)
-                outputs.append(self.model.encode_text(text))
+                outputs.append(self.model.encode_text(text).detach().cpu().numpy())
             else:
                 img = (
                     tv.transforms.functional.to_tensor(img_or_text).unsqueeze(0)
@@ -68,5 +68,5 @@ class Clip(SearchableModel):
                     else img_or_text
                 )
                 img = self.preprocess(img)
-                outputs.append(self.model.encode_image(img))
-        return torch.cat(outputs).detach().cpu()
+                outputs.append(self.model.encode_image(img).detach().cpu().numpy())
+        return outputs

@@ -64,22 +64,40 @@ if __name__ == "__main__":
         extract_tgz(f"{annot_dir}.tgz", f"{annot_dir}/")
         os.remove(f"{annot_dir}.tgz")
 
-    columns = ["clip"]
-    db_dir = "cache/oxbuild.db"
+    db_dir = f"cache/oxbuild.db"
 
-    if not os.path.exists(db_dir):
-        database.insert(db_dir=db_dir, img_dir=img_dir, columns=columns)
+    for column_set in [
+        # ["clip", "sift", "orb", "brisk"],
+        ["clip", "sift"],
+        ["clip"],
+        ["sift"],
+        # ["orb"],
+        # ["brisk"],
+        # ["clip", "orb"],
+        # ["clip", "brisk"],
+        # ["sift", "orb", "brisk"],
+    ]:
+        print(column_set)
 
-    aps = []
-    for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):
-        with open(query, "r") as f:
-            file_str = f.readlines()[0].strip().split(" ")[0]
-        img_file = img_dir + "/" + file_str.replace("oxc1_", "") + ".jpg"
+        indices_exist = [any(col in index for index in glob(db_dir + "/*.index")) for col in column_set]
+        if not all(indices_exist):
+            database.insert(
+                db_dir=db_dir,
+                img_dir=img_dir,
+                columns=[col for col, exist in zip(column_set, indices_exist) if not exist],
+                num_workers=4,
+            )
 
-        results = database.search(db_dir, columns, num_results=25, query=Image.open(img_file))
-        ap = compute_ap(results, query)
-        aps.append(ap)
+        aps = []
+        for query in tqdm(sorted(glob(f"{annot_dir}/*query.txt"))):
+            with open(query, "r") as f:
+                file_str = f.readlines()[0].strip().split(" ")[0]
+            img_file = img_dir + "/" + file_str.replace("oxc1_", "") + ".jpg"
 
-    print(
-        f"average precision: \t\t min = {np.min(aps):.3f} \t\t median = {np.median(aps):.3f} \t\t mean = {np.mean(aps):.3f} \t\t max = {np.max(aps):.3f}"
-    )
+            results = database.search(db_dir, column_set, num_results=25, query=Image.open(img_file))
+            ap = compute_ap(results, query)
+            aps.append(ap)
+
+        print(
+            f"average precision: \t\t min = {np.min(aps):.3f} \t\t median = {np.median(aps):.3f} \t\t mean = {np.mean(aps):.3f} \t\t max = {np.max(aps):.3f}"
+        )

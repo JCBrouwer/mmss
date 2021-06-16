@@ -21,7 +21,7 @@ def ensure_shape(im, size):
     return im
 
 
-class ImagesNoop(Dataset):
+class ImagesFullSize(Dataset):
     def __init__(self, filenames):
         self.filenames = filenames
 
@@ -35,7 +35,7 @@ class ImagesNoop(Dataset):
 
 
 class Images(Dataset):
-    def __init__(self, filenames, size=300):
+    def __init__(self, filenames, size=512):
         self.filenames = filenames
         self.size = size
 
@@ -52,8 +52,9 @@ class Images(Dataset):
         return filename, ensure_shape(image_tensor, self.size)
 
 
+# TODO use `decord` for this instead, should be much faster
 class VideoFrames(Dataset):
-    def __init__(self, filenames, size=300, num_frames=8):
+    def __init__(self, filenames, size=512, num_frames=8):
         self.filenames = filenames
         self.size = size
         self.num_frames = num_frames
