@@ -1,16 +1,16 @@
+import gc
 import os
 import shutil
 import time
 from glob import glob
 
+import database
 import psutil
 import torch.cuda
-from PIL.Image import Image
-
-import database
 from database import Database
 from features import registry
 from features.registry import RegistryEntry
+from PIL import Image
 from util import download, extract_tgz
 
 OXFORD_CACHE = "cache/oxbuild/images"
@@ -20,10 +20,13 @@ OXFORD_ANNOTATION_DOWNLOAD = "https://www.robots.ox.ac.uk/~vgg/data/oxbuildings/
 DATABASE_DIR = "cache/oxbuild.db"
 
 
+N_WORKERS = 4
+
+
 def download_cache(directory, url):
     if not len(glob(f"{directory}/*")) > 0:
         os.makedirs(directory, exist_ok=True)
-        tgz_name = f'{directory}.tgz'
+        tgz_name = f"{directory}.tgz"
         download(url, tgz_name)
         extract_tgz(tgz_name, directory)
         os.remove(tgz_name)
@@ -45,34 +48,34 @@ def run_performance_analysis(reg_entry: RegistryEntry):
     print(f"Performance analysis over column: {reg_entry.name}")
     db = Database(DATABASE_DIR)
 
-    # Single worker insertion
-    files = glob(OXFORD_CACHE + "/*.jpg")
+    files = glob(OXFORD_CACHE + "/*.jpg")[:1000]
 
     seconds = time.time()
 
-    # Single worker insertion with batch size of 8
-    db.index(
-        feature=reg_entry.insert_fn(files, 8, 1, reg_entry.search_model), column_name=reg_entry.name,
-    )
+    # batch size of 8
+    processor = reg_entry.insert_fn(files, 8, N_WORKERS, reg_entry.search_model)
+    db.index(feature=processor, column_name=reg_entry.name)
+    del processor
+    gc.collect()
+    torch.cuda.empty_cache()
 
-    index_time = round(time.time() - seconds, 1)
+    index_time = time.time() - seconds
     print(f"Seconds to index {reg_entry.name} for {len(files)} images = {index_time} seconds")
 
-    return index_time, round(index_time / len(files), 2)
+    return index_time, index_time / len(files)
 
 
-def run_query_performance_analysis(column_set):
-    seconds = time.time()
+def run_query_performance_analysis(columns):
     query_times = []
     for query_file in sorted(glob(f"{ANNOTATION_CACHE}/*query.txt")):
         with open(query_file, "r") as f:
             query_str = f.readlines()[0].strip().split(" ")[0]
         formatted_query = query_str.replace("oxc1_", "") + ".jpg"
         img_file = os.path.join(OXFORD_CACHE, formatted_query)
-        database.search(DATABASE_DIR, column_set, num_results=25, query=Image.open(img_file))
-        seconds_since = time.time() - seconds
-        query_times.append(seconds_since)
-        seconds = seconds_since
+        start = time.time()
+        database.search(DATABASE_DIR, columns, num_results=10, query=Image.open(img_file))
+        taken = time.time() - start
+        query_times.append(taken)
     return query_times
 
 
@@ -103,8 +106,8 @@ def print_system_specs():
 def print_indexing_performance():
     total_indexing_time = sum([x[0] for x in index_performance_dict.values()])
     total_time_per_image = sum(x[1] for x in index_performance_dict.values())
-    avg_indexing_time = round(total_indexing_time / len(index_performance_dict.keys()), 2)
-    avg_indexing_time_image = round(total_indexing_time / len(index_performance_dict.keys()), 2)
+    avg_indexing_time = total_indexing_time / len(index_performance_dict.keys())
+    avg_indexing_time_image = total_indexing_time / len(index_performance_dict.keys())
 
     print("#" * 40, "Feature Pipeline Performance", "#" * 40)
     print(f"Total time: {total_indexing_time}")
@@ -120,15 +123,15 @@ def print_indexing_performance():
 
 
 def print_query_performance():
-    all_query_performance = query_performance_dict['all']
+    all_query_performance = query_performance_dict["all"]
     total_time_all = sum(all_query_performance)
-    average_query_time = round(total_time_all / len(all_query_performance), 2)
+    average_query_time = total_time_all / len(all_query_performance)
     print("#" * 40, "Query Performance", "#" * 40)
     print(f"Total time: {total_time_all}")
     print(f"Average time per query: {average_query_time}")
 
     for key in query_performance_dict.keys():
-        if key == 'all':
+        if key == "all":
             continue
         total_time_key = sum(query_performance_dict[key])
         average_time_key = total_time_key / len(query_performance_dict[key])
@@ -138,7 +141,7 @@ def print_query_performance():
         print(f"  Average time per query: {average_time_key}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("Analyzing performance on Oxford Buildings")
     download_ni_cache()
     remove_db_if_exists()
@@ -151,8 +154,9 @@ if __name__ == '__main__':
     query_performance_dict = dict()
     for entry in registry.REGISTRY:
         query_performance_dict[entry] = run_query_performance_analysis([entry])
-    query_performance_dict['all'] = run_query_performance_analysis(['all'])
+    query_performance_dict["all"] = run_query_performance_analysis(["all"])
 
     print_system_specs()
+    print("Number of workers: ", N_WORKERS)
     print_indexing_performance()
     print_query_performance()

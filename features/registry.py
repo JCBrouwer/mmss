@@ -39,16 +39,16 @@ REGISTRY = {
         insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
         search_model=SIFT(),
     ),
-    "orb": RegistryEntry(
-        name="orb",
-        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
-        search_model=ORB(),
-    ),
-    "brisk": RegistryEntry(
-        name="brisk",
-        insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
-        search_model=BRISK(),
-    ),
+    # "orb": RegistryEntry(
+    #     name="orb",
+    #     insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
+    #     search_model=ORB(),
+    # ),
+    # "brisk": RegistryEntry(
+    #     name="brisk",
+    #     insert_fn=lambda f, bs, nw, em: ProcessorFeature(em, ImagesFullSize(f), batch_size=bs, num_workers=nw),
+    #     search_model=BRISK(),
+    # ),
     "yolo": RegistryEntry(
         name="yolo-clip-text-embedding",
         insert_fn=lambda f, bs, nw, em: ProcessorPipelineFeature(

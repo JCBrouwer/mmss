@@ -37,7 +37,7 @@ class Database:
         except:
             self.rank = 0
 
-    def index(self, feature, column_name=None, index_type="IDMap,Flat"):
+    def index(self, feature, column_name=None, index_type="IDMap,HNSW32,Flat"):
         """Add new files to index"""
         t = time()
         if column_name is None:

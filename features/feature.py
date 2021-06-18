@@ -95,17 +95,17 @@ class Feature(metaclass=ABCMeta):
         for i, processor in enumerate(self.processors):
             processor.initialize(device)
 
-            # if isinstance(processor.model, torch.nn.Module):
-            #     # TODO figure out a way to move this out of worker_init, this is executed on all workers --> inefficient
-            #     # must be called AFTER processor.initialize() though
-            #     try:
-            #         # try to convert Processor's model to TorchScript which avoids python's GIL for heavy computation
-            #         self.processors[i].model = torch.jit.script(processor.model)
-            #     except Exception as e:
-            #         print(e)
-            #         print(
-            #             f"WARNING: converting {self.processors[i].__class__.__name__} to TorchScript failed, feature calculation might be slower..."
-            #         )
+            if isinstance(processor.model, torch.nn.Module):
+                # TODO figure out a way to move this out of worker_init, this is executed on all workers --> inefficient
+                # must be called AFTER processor.initialize() though
+                try:
+                    # try to convert Processor's model to TorchScript which avoids python's GIL for heavy computation
+                    self.processors[i].model = torch.jit.script(processor.model)  # TODO get example input, use trace()
+                except Exception as e:
+                    print(e)
+                    print(
+                        f"WARNING: converting {self.processors[i].__class__.__name__} to TorchScript failed, feature calculation might be slower..."
+                    )
 
         # HACK to get around ThreadPool pickling of member functions. This results in the main thread's Feature object
         # being "self" rather than the worker's Feature object. Therefore we load the worker's process_batch function
