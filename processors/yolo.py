@@ -23,9 +23,7 @@ class Yolo(Processor):
 
     def initialize(self, device):
         self.device = device
-        self.model = torch.hub.load(
-            "ultralytics/yolov5", "yolov5x", pretrained=True, device=device, force_reload=True
-        ).eval()
+        self.model = torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True, device=device).eval()
         if torch.cuda.is_available():
             self.model = self.model.half()
 
