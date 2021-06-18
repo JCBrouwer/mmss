@@ -189,7 +189,9 @@ class Artemis(Processor):
 
         if not os.path.exists(speaker_checkpoint):
             print("Downloading emotion-grounded speaker...")
-            path, _ = download("https://www.dropbox.com/s/0erh464wag8ods1/emo_grounded_sat_speaker_cvpr21.zip?dl=1")
+            path, _ = download(
+                "https://www.dropbox.com/s/0erh464wag8ods1/emo_grounded_sat_speaker_cvpr21.zip?dl=1", speaker_checkpoint
+            )
             with zipfile.ZipFile(path, "r") as f:
                 f.extractall("cache/")
             shutil.move("cache/03-17-2021-20-32-19/checkpoints/best_model.pt", speaker_checkpoint)
