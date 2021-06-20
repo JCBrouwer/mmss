@@ -17,7 +17,7 @@ def show_progress(t):
 
 
 def download(url, path):
-    with tqdm(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc="Downloading to: "+path) as t:
+    with tqdm(unit="B", unit_scale=True, unit_divisor=1024, miniters=1, desc="Downloading to: " + path) as t:
         return urlretrieve(url, path, reporthook=show_progress(t))
 
 

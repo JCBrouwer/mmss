@@ -8,6 +8,6 @@ opencv-python
 regex
 torch==1.7.1
 tqdm
-
+psutil
 -e CLIP
 -e artemis

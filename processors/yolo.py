@@ -11,7 +11,9 @@ from processors.base import Processor
 
 
 class Yolo(Processor):
-    def __init__(self,):
+    def __init__(
+        self,
+    ):
         self.model = None
         self.device = None
 

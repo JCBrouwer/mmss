@@ -1,14 +1,18 @@
 # Multi-Media Similarity Search
 
+A portion of our literature study notes as well as the log of work per week can be found [in the wiki](https://gitlab.ewi.tudelft.nl/cs4065/2020-2021/team23/multi-media-similarity-search/-/wikis/home).
+
 ## Installation
 
-To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version=3.8.
+To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version=3.7.
 
 Clone the repository (and its submodules) and install the dependencies with the commands below.
 
 ```bash
+conda create -n mmss python=3.7
 git clone --recursive https://gitlab.ewi.tudelft.nl/cs4065/2020-2021/team23/multi-media-similarity-search.git
-conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
+cd multi-media-similarity-search
+conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=10.2
 pip install -r requirements.txt
 ```
 
@@ -31,6 +35,19 @@ python -m database.search -h
 
 # search database using a text query
 python -m database.search
+```
+
+The evaluation results from the report can be reproduced by running the evaluation scripts in `evaluation/`
+
+```bash
+python -m evaluation.coco
+python -m evaluation.oxbuild
+python -m evaluation.performance
+
+# n.b. the dataset must first be downloaded from the link at the top of the file
+# text or image queries are supported, for images just supply the path
+# multiple queries can be separated with the pipe operator: |
+python -m evaluation.qualitative
 ```
 
 ## Architecture

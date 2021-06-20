@@ -74,4 +74,3 @@ class ORB(KeyPointMatching):
 class BRISK(KeyPointMatching):
     def __init__(self, n_keypoints=1000):
         super().__init__("brisk", n_keypoints)
-
