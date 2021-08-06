@@ -1,10 +1,12 @@
 # Multi-Media Similarity Search
 
-A portion of our literature study notes as well as the log of work per week can be found [in the wiki](https://gitlab.ewi.tudelft.nl/cs4065/2020-2021/team23/multi-media-similarity-search/-/wikis/home).
+Hans Brouwer, Jasper Ketelaar, Jan Willem van Rhenen, and Thomas Pfann
+
+Originally developed for TU Delft CS4065, now maintained by Hans Brouwer
 
 ## Installation
 
-To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version=3.7.
+To install this project we recommend using a [conda](https://docs.conda.io/en/latest/) environment with python version 3.7.
 
 Clone the repository (and its submodules) and install the dependencies with the commands below.
 
